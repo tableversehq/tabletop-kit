@@ -1,55 +1,106 @@
-# tabletop-engine
+# Tabletop Kit
 
-Transport-agnostic runtime for board-game and tabletop rules engines.
+Open-source TypeScript toolkit for building digital tabletop and board-game
+implementations.
 
-This repo is a Bun workspace centered on the reusable engine package in
-[`packages/tabletop-engine`](./packages/tabletop-engine), plus working example
-games and clients.
+Tabletop Kit helps you model game state, validate and execute player commands,
+project hidden information per viewer, and generate local TypeScript and schema
+artifacts from your game definition.
 
-## Current Status
+## Packages
 
-The project is no longer just research or bootstrap code. The engine currently
-implements:
+- [`@tabletop-kit/engine`](./packages/tabletop-engine)
+  transport-agnostic rules/runtime engine
+- [`@tabletop-kit/cli`](./packages/cli)
+  local tooling package that installs the `tt-kit` command
+- `@tabletop-kit/ui`
+  planned UI package for reusable hooks and scaffolded components
+
+## Install
+
+```bash
+bun add @tabletop-kit/engine
+bun add -d @tabletop-kit/cli
+```
+
+or:
+
+```bash
+npm install @tabletop-kit/engine
+npm install --save-dev @tabletop-kit/cli
+```
+
+## Engine
+
+`@tabletop-kit/engine` provides the runtime building blocks for a board-game
+rules package:
 
 - `GameDefinitionBuilder`
 - `createGameExecutor(...)`
 - command validation, execution, availability, and discovery
-- progression lifecycle orchestration
+- stage/progression lifecycle orchestration
 - deterministic RNG
-- decorator-authored state facades with `@State()`, `@field(...)`, and `t`
+- class-authored state facades with `GameState`, `@field(...)`, and `t`
 - hidden-information projection with `getView(...)`
+- visibility configuration through `configureVisibility(...)`
 - snapshots, replay helpers, and scenario testing
-- protocol descriptor generation
-- initial hosted AsyncAPI generation
 
-## Workspace Layout
+Example state facade:
 
-- [`packages/tabletop-engine`](./packages/tabletop-engine)
-  reusable runtime package
+```ts
+import { field, GameState, t } from "@tabletop-kit/engine";
+
+class CounterState extends GameState {
+  @field(t.number())
+  value = 0;
+
+  increment() {
+    this.value += 1;
+  }
+}
+```
+
+## CLI
+
+`@tabletop-kit/cli` installs the `tt-kit` command.
+
+```bash
+tt-kit generate types
+tt-kit generate schemas
+tt-kit generate client-sdk
+tt-kit validate
+```
+
+The CLI reads `tabletop.config.ts` from your project:
+
+```ts
+import { defineConfig } from "@tabletop-kit/engine/config";
+import { createGame } from "./src/game";
+
+export default defineConfig({
+  game: createGame(),
+  outDir: "./generated",
+});
+```
+
+## Examples
+
 - [`examples/splendor/engine`](./examples/splendor/engine)
   reference Splendor game built on the engine
 - [`examples/splendor/terminal`](./examples/splendor/terminal)
-  terminal client for exercising gameplay and discovery loops
-- [`docs/design`](./docs/design)
-  current architectural decisions
+  terminal client for local gameplay and command discovery loops
+- [`examples/splendor/server`](./examples/splendor/server) and
+  [`examples/splendor/web`](./examples/splendor/web)
+  full-stack reference app for the Splendor example
 
-## Current Deferrals
-
-Not fully implemented yet:
-
-- trigger engine
-- stack / queue resolution
-- richer event-resolution model
-- persistence adapters
-- richer hosted protocol beyond the current first AsyncAPI slice
-
-## Common Commands
+## Local Development
 
 ```bash
 bun install
 bun run lint
-bun run typecheck
-bun run test
+bunx tsc -b
+bun test --cwd packages/tabletop-engine
+bun test --cwd packages/cli
 ```
 
 Additional useful checks:
