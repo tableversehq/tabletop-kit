@@ -58,6 +58,45 @@ This doc closes all of those.
    same `useDiscovery` state machine.
 7. **Customization model: edit copied source for visual changes, build new
    components for game-specific composition, never wrap to preset props.**
+8. **`@tabletop-kit/ui` is a framework half, not an independent library.**
+   The hooks layer is intentionally coupled to `@tabletop-kit/engine`; the
+   components layer is intentionally decoupled. See the
+   [framework boundary section](#framework-boundary) below.
+
+## Framework Boundary
+
+Tabletop Kit is structured and marketed as a framework. The engine and the
+hooks layer of the UI library are not independent things; they are two
+halves of one framework, joined at the `TTKitClient<G>` interface defined
+in the [2026-05-19 hooks design](./2026-05-19-tabletop-ui-hooks-design.md).
+
+The framework decision is recorded in full in the
+[2026-05-19 Tabletop Kit As Framework](./2026-05-19-tabletop-kit-as-framework.md)
+doc. The short version:
+
+- **Engine + hooks are coupled.** The hooks read engine views, drive the
+  engine's discovery state machine, and consume the engine's event stream.
+  Their value comes from being engine-aware; decoupling them would strip
+  that value.
+- **Components are decoupled.** They take props (`state`, `onClick`) and
+  render markup. They do not import the engine, the hooks, or
+  `TTKitClient`. A customer can use the components with their own state
+  source by authoring hooks that return the same prop shapes.
+- **The `TTKitClient<G>` interface is engine-shaped but
+  hand-implementable.** In-process, Tabletop Lab codegen, and custom
+  customer transports all target the same interface.
+
+This boundary informs a few things in this doc:
+
+- `@tabletop-kit/ui` is allowed (encouraged) to import engine types from
+  `@tabletop-kit/engine`. This is not a violation of any abstraction.
+- Components in the registry must remain prop-driven. A component that
+  imports `useGameState` or `useDiscovery` directly is a smell —
+  game-specific composition belongs in the customer's
+  `components/board/` directory, not in the registry.
+- The customization model below ("edit copied source") applies only to
+  components. Hooks are versioned API surface and must not be patched in
+  the customer's tree.
 
 ## CLI Surface
 
