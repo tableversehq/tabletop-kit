@@ -146,11 +146,15 @@ assertions, no separate `.d.ts` to maintain.
 
 ### Costs
 
-- **Compile-time cost grows with visibility complexity.** Type-level walks
-  of state trees are O(field-count × nesting-depth). For Splendor-scale games
-  this is well within TS limits; for very large state trees with deeply
-  nested visibility-configured classes, it may approach TS's instantiation
-  depth limit (50 levels by default) or noticeably slow `tsc`.
+- **Adds one more type-level pass over the state tree.** The engine already
+  walks the tree via `CanonicalGameState<TState>` (canonical.ts:17) to strip
+  methods and produce the plain-data shape. `ApplyVisibility` does another
+  walk of the same shape — same nesting, same recursion structure — with a
+  per-field lookup against the visibility config tuple
+  (`Extract<Config["fields"][number], { fieldName: K }>`). Cost is roughly
+  additive (≈2× the existing walk), not compounding. TS's instantiation
+  depth limit is unaffected unless the state tree is already brushing the
+  limit for canonical-state derivation.
 - **Type-error messages get harder to read.** When a `derive` return doesn't
   match its `schema`, the error surfaces through `ApplyVisibility`'s
   conditional chain — multi-line, deeply nested types that consumers will
@@ -173,7 +177,6 @@ assertions, no separate `.d.ts` to maintain.
 Adopt this design if:
 
 - View-type accuracy matters more than codegen tooling investment.
-- State trees stay within TS's compile-time capacity (most games).
 - Non-TS consumers of the view shape are minimal or already served by
   codegen as a separate output.
 
@@ -181,8 +184,6 @@ Keep codegen as the source of truth if:
 
 - The view shape needs to be consumed by non-TS tooling (e.g. JSON Schema,
   OpenAPI, AsyncAPI, other generators downstream).
-- State trees grow deep enough that type-level derivation becomes a compile
-  cost problem.
 
 The two are not mutually exclusive — type-level derivation can be the default
 authoring story, while codegen continues to emit flat `.d.ts` files for
@@ -191,8 +192,10 @@ non-TS consumers who need them.
 ## Open Questions
 
 - Does `ApplyVisibility` cleanly handle `Record<string, NestedClass>` and
-  arrays of nested classes without hitting depth limits? Needs a prototype
-  on the Splendor state to confirm.
+  arrays of nested classes? Should mirror `CanonicalGameState`'s recursion
+  pattern. Needs a prototype on the Splendor state to confirm the lookup
+  shape `Extract<Config["fields"][number], { fieldName: K }>` cooperates
+  with TS inference for nested classes.
 - How does `visible_to_self` typecheck at the consumer? `T | HiddenValue<...>`
   forces consumers to narrow on every read — acceptable, or do we want a
   viewer-parameterized projection?
