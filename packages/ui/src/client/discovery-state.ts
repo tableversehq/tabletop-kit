@@ -1,4 +1,13 @@
-import type { TTKitClient, TTKitGame } from "./types.ts";
+import type {
+  CommandDiscoveryResult,
+  DiscoveryStepOption,
+} from "@tabletop-kit/engine";
+import type {
+  CommandPayload,
+  DiscoveryPayload,
+  TTKitClient,
+  TTKitGame,
+} from "./types.ts";
 
 export type DiscoveryStatus =
   | "idle"
@@ -7,43 +16,22 @@ export type DiscoveryStatus =
   | "executing"
   | "error";
 
-export interface OpenDiscoveryResult {
-  readonly complete: false;
-  readonly step: string;
-  readonly options: ReadonlyArray<DiscoveryOption>;
-}
+/** Open variant of the engine's discovery result — more options to pick. */
+export type OpenDiscoveryResult = Extract<
+  CommandDiscoveryResult,
+  { complete: false }
+>;
 
-export interface CompleteDiscoveryResult {
-  readonly complete: true;
-  readonly input: Record<string, unknown>;
-}
-
-export type DiscoveryResultShape =
-  | OpenDiscoveryResult
-  | CompleteDiscoveryResult;
-
-export interface DiscoveryOption {
-  readonly id: string;
-  readonly output: Record<string, unknown>;
-  readonly nextInput: Record<string, unknown>;
-  readonly nextStep: string;
-}
-
-export interface DiscoveryPayloadShape {
-  readonly type: string;
-  readonly step: string;
-  readonly input: Record<string, unknown>;
-}
-
-export interface CommandPayloadShape {
-  readonly type: string;
-  readonly input: Record<string, unknown>;
-}
+/** Complete variant — discovery is done and ready to confirm. */
+export type CompleteDiscoveryResult = Extract<
+  CommandDiscoveryResult,
+  { complete: true }
+>;
 
 export interface DiscoveryStateSnapshot {
   readonly activeCommandType: string | null;
   readonly open: OpenDiscoveryResult | null;
-  readonly trail: ReadonlyArray<DiscoveryOption>;
+  readonly trail: ReadonlyArray<DiscoveryStepOption>;
   readonly pendingInput: Record<string, unknown> | null;
   readonly status: DiscoveryStatus;
   readonly error: string | null;
@@ -86,7 +74,7 @@ export class DiscoveryState {
     };
   }
 
-  start(payload: DiscoveryPayloadShape): void {
+  start(payload: DiscoveryPayload): void {
     const flow = ++this.flowId;
     this.setSnapshot({
       activeCommandType: payload.type,
@@ -99,7 +87,7 @@ export class DiscoveryState {
     void this.runDiscover(flow, payload);
   }
 
-  pick(option: DiscoveryOption): void {
+  pick(option: DiscoveryStepOption): void {
     const current = this.snapshot;
     if (
       current.status !== "discovering" ||
@@ -130,7 +118,7 @@ export class DiscoveryState {
       return;
     }
     const flow = ++this.flowId;
-    const command: CommandPayloadShape = {
+    const command = {
       type: current.activeCommandType,
       input: current.pendingInput,
     };
@@ -145,12 +133,10 @@ export class DiscoveryState {
 
   private async runDiscover(
     flow: number,
-    payload: DiscoveryPayloadShape,
+    payload: DiscoveryPayload,
   ): Promise<void> {
     try {
-      const result = (await this.client.discover(
-        payload,
-      )) as DiscoveryResultShape;
+      const result = await this.client.discover(payload);
       if (this.flowId !== flow) return;
 
       if (result.complete) {
@@ -179,7 +165,7 @@ export class DiscoveryState {
 
   private async runExecute(
     flow: number,
-    command: CommandPayloadShape,
+    command: CommandPayload,
   ): Promise<void> {
     try {
       const result = await this.client.execute(command);

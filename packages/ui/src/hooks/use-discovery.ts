@@ -1,40 +1,33 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { useTTKitContext } from "../client/context.tsx";
 import type {
-  DiscoveryOption,
-  DiscoveryPayloadShape,
   DiscoveryStateSnapshot,
   DiscoveryStatus,
-  OpenDiscoveryResult,
 } from "../client/discovery-state.ts";
 import type { RegisteredGame, TTKitGame } from "../client/types.ts";
 
 /**
- * Resolves to the open-discovery variant from the customer's typed result
- * union when augmented; falls back to the structural shape otherwise.
+ * Open-discovery variant from the customer's typed result union. With the
+ * tightened TTKitGame constraints, G["discovery"]["result"] always extends
+ * the engine's CommandDiscoveryResult, so the Extract narrows correctly.
  */
-type OpenResultOf<G extends TTKitGame> =
-  Extract<G["discovery"]["result"], { complete: false }> extends never
-    ? OpenDiscoveryResult
-    : Extract<G["discovery"]["result"], { complete: false }>;
+type OpenResultOf<G extends TTKitGame> = Extract<
+  G["discovery"]["result"],
+  { complete: false }
+>;
 
 type PickOptionOf<G extends TTKitGame> =
-  OpenResultOf<G> extends { options: ReadonlyArray<infer O> }
-    ? O
-    : DiscoveryOption;
+  OpenResultOf<G> extends { options: ReadonlyArray<infer O> } ? O : never;
 
-type CompleteResultOf<G extends TTKitGame> =
-  Extract<G["discovery"]["result"], { complete: true }> extends never
-    ? { complete: true; input: Record<string, unknown> }
-    : Extract<G["discovery"]["result"], { complete: true }>;
+type CompleteResultOf<G extends TTKitGame> = Extract<
+  G["discovery"]["result"],
+  { complete: true }
+>;
 
 type CommandInputOf<G extends TTKitGame> =
-  CompleteResultOf<G> extends { input: infer I } ? I : Record<string, unknown>;
+  CompleteResultOf<G> extends { input: infer I } ? I : never;
 
-type DiscoveryPayloadOf<G extends TTKitGame> =
-  G["discovery"]["payload"] extends Record<string, unknown> | { type: string }
-    ? G["discovery"]["payload"]
-    : DiscoveryPayloadShape;
+type DiscoveryPayloadOf<G extends TTKitGame> = G["discovery"]["payload"];
 
 type RegisteredOpenResult = OpenResultOf<RegisteredGame>;
 type RegisteredPickOption = PickOptionOf<RegisteredGame>;

@@ -1,10 +1,34 @@
+import type {
+  Command,
+  CommandDiscoveryResult,
+  Discovery,
+} from "@tabletop-kit/engine";
+
+/**
+ * Client-side command payload. The engine's `Command` carries `actorId`,
+ * which the adapter fills in from the active viewer — UI consumers must
+ * not author it.
+ */
+export type CommandPayload = Omit<Command, "actorId">;
+
+/**
+ * Client-side discovery payload. Same actorId story as `CommandPayload`.
+ */
+export type DiscoveryPayload = Omit<Discovery, "actorId">;
+
+/**
+ * Discovery result union — open (more options to pick) or complete
+ * (ready to confirm). Re-exported from the engine for hooks consumers.
+ */
+export type DiscoveryResult = CommandDiscoveryResult;
+
 export interface TTKitGame {
   view: unknown;
   event: unknown;
-  command: unknown;
+  command: CommandPayload;
   discovery: {
-    payload: unknown;
-    result: unknown;
+    payload: DiscoveryPayload;
+    result: DiscoveryResult;
   };
 }
 

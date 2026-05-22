@@ -1,10 +1,5 @@
 import type { CanonicalState, GameExecutor } from "@tabletop-kit/engine";
 import type {
-  CommandPayloadShape,
-  DiscoveryPayloadShape,
-} from "../client/discovery-state.ts";
-import type {
-  ExecutionResult,
   RegisteredGame,
   TTKitClient,
   TTKitGame,
@@ -117,7 +112,7 @@ export function createInProcessClient<
 
     async discover(payload) {
       ensureLive();
-      const { type, step, input } = payload as DiscoveryPayloadShape;
+      const { type, step, input } = payload;
       const result = executor.discoverCommand(state, {
         type,
         actorId: currentViewerId,
@@ -127,12 +122,12 @@ export function createInProcessClient<
       if (result === null) {
         throw new Error(`discover: command "${type}" has no discovery defined`);
       }
-      return result as unknown as G["discovery"]["result"];
+      return result as G["discovery"]["result"];
     },
 
     async execute(command) {
       ensureLive();
-      const { type, input } = command as CommandPayloadShape;
+      const { type, input } = command;
       const result = executor.executeCommand(state, {
         type,
         actorId: currentViewerId,
@@ -140,10 +135,7 @@ export function createInProcessClient<
       });
 
       if (!result.ok) {
-        return {
-          accepted: false,
-          reason: result.reason,
-        } satisfies ExecutionResult;
+        return { accepted: false, reason: result.reason };
       }
 
       state = result.state;
@@ -151,7 +143,7 @@ export function createInProcessClient<
       alignViewerWithActivePlayer(state);
       notifySubscribers();
       emitEvents(result.events);
-      return { accepted: true } satisfies ExecutionResult;
+      return { accepted: true };
     },
 
     dispose() {

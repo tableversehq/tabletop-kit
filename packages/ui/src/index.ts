@@ -1,16 +1,15 @@
 export { TTKitProvider } from "./client/context.tsx";
 export {
   DiscoveryState,
-  type CommandPayloadShape,
   type CompleteDiscoveryResult,
-  type DiscoveryOption,
-  type DiscoveryPayloadShape,
-  type DiscoveryResultShape,
   type DiscoveryStateSnapshot,
   type DiscoveryStatus,
   type OpenDiscoveryResult,
 } from "./client/discovery-state.ts";
 export type {
+  CommandPayload,
+  DiscoveryPayload,
+  DiscoveryResult,
   ExecutionResult,
   RegisteredGame,
   TTKitClient,

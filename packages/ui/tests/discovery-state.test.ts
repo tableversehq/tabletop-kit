@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import {
-  DiscoveryState,
-  type DiscoveryOption,
-  type DiscoveryResultShape,
-} from "../src/client/discovery-state.ts";
+import type {
+  CommandDiscoveryResult,
+  DiscoveryStepOption,
+} from "@tabletop-kit/engine";
+import { DiscoveryState } from "../src/client/discovery-state.ts";
 import type { ExecutionResult } from "../src/client/types.ts";
 
 interface FakeClient {
-  discover: (request: unknown) => Promise<DiscoveryResultShape>;
+  discover: (request: unknown) => Promise<CommandDiscoveryResult>;
   execute: (command: unknown) => Promise<ExecutionResult>;
 }
 
@@ -19,7 +19,9 @@ function fakeClient(overrides: Partial<FakeClient> = {}): FakeClient {
   };
 }
 
-function makeOption(over: Partial<DiscoveryOption> = {}): DiscoveryOption {
+function makeOption(
+  over: Partial<DiscoveryStepOption> = {},
+): DiscoveryStepOption {
   return {
     id: "opt",
     output: {},
@@ -45,7 +47,7 @@ describe("DiscoveryState", () => {
   });
 
   test("start() advances to discovering and stores open result", async () => {
-    const open: DiscoveryResultShape = {
+    const open: CommandDiscoveryResult = {
       complete: false,
       step: "gem",
       options: [makeOption({ id: "blue" })],
@@ -65,7 +67,7 @@ describe("DiscoveryState", () => {
   });
 
   test("start() forwarding a complete result moves to ready_to_confirm", async () => {
-    const complete: DiscoveryResultShape = {
+    const complete: CommandDiscoveryResult = {
       complete: true,
       input: { foo: 1 },
     };
@@ -83,12 +85,12 @@ describe("DiscoveryState", () => {
   });
 
   test("pick() advances using option.nextStep and appends to trail", async () => {
-    const openOne: DiscoveryResultShape = {
+    const openOne: CommandDiscoveryResult = {
       complete: false,
       step: "gem",
       options: [makeOption({ id: "blue", nextStep: "gem" })],
     };
-    const openTwo: DiscoveryResultShape = {
+    const openTwo: CommandDiscoveryResult = {
       complete: false,
       step: "gem",
       options: [makeOption({ id: "white", nextStep: "gem" })],
@@ -153,11 +155,11 @@ describe("DiscoveryState", () => {
   });
 
   test("cancel() returns to idle and ignores in-flight discover replies", async () => {
-    let resolve: ((value: DiscoveryResultShape) => void) | null = null;
+    let resolve: ((value: CommandDiscoveryResult) => void) | null = null;
     const state = new DiscoveryState(
       fakeClient({
         discover: () =>
-          new Promise<DiscoveryResultShape>((res) => {
+          new Promise<CommandDiscoveryResult>((res) => {
             resolve = res;
           }),
       }) as never,
