@@ -1,4 +1,4 @@
-import type { GameExecutor } from "@tabletop-kit/engine";
+import type { CanonicalState, GameExecutor } from "@tabletop-kit/engine";
 import type {
   CommandPayloadShape,
   DiscoveryPayloadShape,
@@ -10,16 +10,9 @@ import type {
   TTKitGame,
 } from "../client/types.ts";
 
-interface CanonicalStateLike {
-  game: object;
-  runtime: object;
-}
-
-export interface CreateInProcessClientOptions<
-  State extends CanonicalStateLike,
-> {
+export interface CreateInProcessClientOptions<GameState extends object> {
   viewerId: string;
-  initialState: State;
+  initialState: CanonicalState<GameState>;
 }
 
 /**
@@ -29,24 +22,25 @@ export interface CreateInProcessClientOptions<
  * on a network.
  *
  * The customer constructs the initial state externally (typically with
- * `executor.createInitialState(...)`) and hands it in. The adapter owns the
- * running-game phase: state mutation, subscriber notification, event fan-out.
+ * `executor.createInitialState(...)`, or by restoring a snapshot / starting
+ * a replay) and hands it in. The adapter owns the running-game phase: state
+ * mutation, subscriber notification, event fan-out.
  *
- * `G` defaults to the augmented `RegisteredGame`; `State` and `SetupInput`
- * are inferred from the `executor` and `options.initialState` arguments. In
- * the common case, no generics need to be specified at the call site.
+ * `G` defaults to the augmented `RegisteredGame`; `GameState` and
+ * `SetupInput` are inferred from the `executor` argument. In the common
+ * case, no generics need to be specified at the call site.
  */
 export function createInProcessClient<
   G extends TTKitGame = RegisteredGame,
-  State extends CanonicalStateLike = CanonicalStateLike,
+  GameState extends object = object,
   SetupInput extends object | undefined = undefined,
 >(
-  executor: GameExecutor<State["game"], SetupInput>,
-  options: CreateInProcessClientOptions<State>,
+  executor: GameExecutor<GameState, SetupInput>,
+  options: CreateInProcessClientOptions<GameState>,
 ): TTKitClient<G> {
-  let state = options.initialState as never;
+  let state = options.initialState;
   let version = 0;
-  const viewer = { kind: "player" as const, playerId: options.viewerId };
+  let currentViewerId = options.viewerId;
   const subscribers = new Set<() => void>();
   const eventListeners = new Set<(event: G["event"]) => void>();
   let disposed = false;
@@ -69,18 +63,37 @@ export function createInProcessClient<
     }
   };
 
+  // After every successful execute, align the viewer with the new active
+  // player so local pass-and-play works automatically. No-op for
+  // single-player (active player is always the same), and skipped for
+  // automatic / multi-active-player stages where there is no single
+  // active player to switch to.
+  const alignViewerWithActivePlayer = (
+    nextState: CanonicalState<GameState>,
+  ): void => {
+    const stage = nextState.runtime.progression.currentStage;
+    if (stage.kind !== "activePlayer") return;
+    if (stage.activePlayerId === currentViewerId) return;
+    currentViewerId = stage.activePlayerId;
+  };
+
   return {
-    viewerId: options.viewerId,
+    get viewerId() {
+      return currentViewerId;
+    },
 
     getView() {
       if (disposed) return null;
-      return executor.getView(state, viewer) as G["view"];
+      return executor.getView(state, {
+        kind: "player",
+        playerId: currentViewerId,
+      }) as G["view"];
     },
 
     getAvailableCommands() {
       if (disposed) return [];
       return executor.listAvailableCommands(state, {
-        actorId: options.viewerId,
+        actorId: currentViewerId,
       });
     },
 
@@ -107,7 +120,7 @@ export function createInProcessClient<
       const { type, step, input } = payload as DiscoveryPayloadShape;
       const result = executor.discoverCommand(state, {
         type,
-        actorId: options.viewerId,
+        actorId: currentViewerId,
         step,
         input,
       });
@@ -122,7 +135,7 @@ export function createInProcessClient<
       const { type, input } = command as CommandPayloadShape;
       const result = executor.executeCommand(state, {
         type,
-        actorId: options.viewerId,
+        actorId: currentViewerId,
         input,
       });
 
@@ -133,8 +146,9 @@ export function createInProcessClient<
         } satisfies ExecutionResult;
       }
 
-      state = result.state as never;
+      state = result.state;
       version += 1;
+      alignViewerWithActivePlayer(state);
       notifySubscribers();
       emitEvents(result.events);
       return { accepted: true } satisfies ExecutionResult;

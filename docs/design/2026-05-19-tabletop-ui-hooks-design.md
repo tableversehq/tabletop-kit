@@ -447,12 +447,17 @@ Why it repeats: every game wants side-effects (sounds, toasts, brief
 animations) tied to specific events. Hand-rolled "diff the previous view
 against the current view" code is brittle and game-specific.
 
-### Problem 6 — Knowing who the viewer is
+### Problem 6 — Knowing who the viewer is (with pass-and-play handled automatically)
 
 Components need to ask "am I the active player?" or "is this my hand?"
 That question requires both the engine's notion of "active player" (in
-the view) and the client's notion of "who am I" (a constant for a given
-mounted Provider).
+the view) and the client's notion of "who am I."
+
+For local multi-player, the viewer rotates with the turn order — P1
+acts, the screen passes to P2, and so on. Tabletop Kit handles this
+automatically: the in-process adapter aligns the viewer with the new
+active player after every successful `execute`. Customers do not call
+a setter; there is no setter to call.
 
 **Hook: `useViewerId()`**
 
@@ -460,7 +465,52 @@ mounted Provider).
 function useViewerId(): string;
 ```
 
-Returns `client.viewerId` from the Provider. Never causes re-renders.
+Subscribes to viewer changes; re-renders when the adapter rotates to
+the next active player.
+
+### Automatic viewer alignment (in-process adapter)
+
+After every successful `execute`, `createInProcessClient` reads
+`state.runtime.progression.currentStage`. If it is a single-active-
+player stage, the viewer is set to that player. The change happens
+inside the same `execute` tick — one snapshot reflects the new state,
+the new available commands, and the new viewer.
+
+```ts
+createInProcessClient(executor, {
+  viewerId: "p1",
+  initialState,
+});
+```
+
+No option to disable. The three supported modes — local single-player,
+local pass-and-play, and hosted (online) — all want the same behavior:
+
+- **Local single-player**: the active player never changes, so the
+  alignment is a no-op.
+- **Local pass-and-play**: alignment rotates viewers automatically; no
+  customer code needed.
+- **Hosted online**: uses the Lab WS adapter, which authenticates a
+  single viewer per connection and does not implement local alignment.
+
+Alignment is skipped for `automatic` and `multiActivePlayer` stages
+(no single active player to align to) and is a no-op when the new
+active player matches the current viewer (no spurious notify).
+
+### `useViewerId` vs reading `currentStage` from view
+
+These answer different questions and can diverge:
+
+- `useViewerId()` — _whose perspective the UI is currently rendering._
+  Drives `useGameState` projection, `useSelectable` actor checks, hand
+  zone visibility.
+- `useGameState((v) => v.runtime.progression.currentStage)` — _whose
+  turn it is per the rules._ Game-logic state.
+
+In local in-process, they coincide most of the time (alignment keeps
+them in sync). They diverge during `automatic` / `multiActivePlayer`
+stages, in the hosted adapter (viewer fixed, active player moves), and
+in the brief window during stage transitions.
 
 ```tsx
 function MyHand() {

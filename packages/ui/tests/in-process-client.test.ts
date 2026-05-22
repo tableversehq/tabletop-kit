@@ -6,6 +6,56 @@ interface FakeState {
   runtime: { tick: number };
 }
 
+// Tests focus on the adapter's behavior, not engine runtime shape. The
+// `runtime` field is opaque to the adapter (other than the active-player
+// readout used by auto-switch), so we widen via `as never` at the
+// boundary rather than synthesizing a full RuntimeState.
+function fakeInitialState(counter = 0): never {
+  return {
+    game: { counter },
+    runtime: {
+      tick: 0,
+      progression: {
+        currentStage: { id: "play", kind: "automatic" },
+        lastActingStage: null,
+      },
+    },
+  } as never;
+}
+
+function stateWithActivePlayer(
+  playerId: string,
+  counter = 0,
+): {
+  game: { counter: number };
+  runtime: {
+    tick: number;
+    progression: {
+      currentStage: {
+        id: string;
+        kind: "activePlayer";
+        activePlayerId: string;
+      };
+      lastActingStage: null;
+    };
+  };
+} {
+  return {
+    game: { counter },
+    runtime: {
+      tick: 0,
+      progression: {
+        currentStage: {
+          id: "play",
+          kind: "activePlayer",
+          activePlayerId: playerId,
+        },
+        lastActingStage: null,
+      },
+    },
+  };
+}
+
 interface FakeExecutorCalls {
   getView: number;
   listAvailableCommands: number;
@@ -46,7 +96,13 @@ function buildFakeExecutor(initialCounter = 0) {
         ok: true as const,
         state: {
           game: { counter: state.game.counter + cmd.input.delta },
-          runtime: { tick: state.runtime.tick + 1 },
+          runtime: {
+            tick: state.runtime.tick + 1,
+            progression: {
+              currentStage: { id: "play", kind: "automatic" },
+              lastActingStage: null,
+            },
+          },
         },
         events: [{ type: "counter_changed", delta: cmd.input.delta }],
       };
@@ -61,7 +117,7 @@ describe("createInProcessClient", () => {
     const { executor, calls } = buildFakeExecutor();
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 5 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(5),
     });
 
     expect(client.getView()).toEqual({ counter: 5 });
@@ -72,7 +128,7 @@ describe("createInProcessClient", () => {
     const { executor } = buildFakeExecutor();
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     let subscribeCalls = 0;
@@ -99,7 +155,7 @@ describe("createInProcessClient", () => {
     const { executor, calls } = buildFakeExecutor();
     const client = createInProcessClient(executor as never, {
       viewerId: "alice",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     await client.execute({ type: "increment", input: { delta: 1 } });
@@ -121,7 +177,7 @@ describe("createInProcessClient", () => {
     })) as never;
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     let subscribeCalls = 0;
@@ -139,7 +195,7 @@ describe("createInProcessClient", () => {
     const { executor, calls } = buildFakeExecutor();
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     const result = await client.discover({
@@ -158,7 +214,7 @@ describe("createInProcessClient", () => {
     executor.discoverCommand = () => null as never;
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     await expect(
@@ -170,7 +226,7 @@ describe("createInProcessClient", () => {
     const { executor } = buildFakeExecutor();
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     let count = 0;
@@ -184,11 +240,99 @@ describe("createInProcessClient", () => {
     expect(count).toBe(1);
   });
 
+  test("auto-switch viewer fires when execute lands on an activePlayer stage", async () => {
+    const { executor } = buildFakeExecutor();
+    executor.executeCommand = (() => ({
+      ok: true as const,
+      state: stateWithActivePlayer("p2", 1),
+      events: [],
+    })) as never;
+    const client = createInProcessClient(executor as never, {
+      viewerId: "p1",
+      initialState: fakeInitialState(),
+    });
+
+    let notifications = 0;
+    client.subscribe(() => {
+      notifications += 1;
+    });
+
+    expect(client.viewerId).toBe("p1");
+    await client.execute({ type: "increment", input: { delta: 1 } });
+    expect(client.viewerId).toBe("p2");
+    expect(notifications).toBe(1);
+  });
+
+  test("auto-switch viewer is skipped for automatic stages", async () => {
+    const { executor } = buildFakeExecutor();
+    // buildFakeExecutor returns automatic-stage state by default
+    const client = createInProcessClient(executor as never, {
+      viewerId: "p1",
+      initialState: fakeInitialState(),
+    });
+
+    await client.execute({ type: "increment", input: { delta: 1 } });
+    expect(client.viewerId).toBe("p1");
+  });
+
+  test("auto-switch viewer is skipped for multiActivePlayer stages", async () => {
+    const { executor } = buildFakeExecutor();
+    executor.executeCommand = (() => ({
+      ok: true as const,
+      state: {
+        game: { counter: 1 },
+        runtime: {
+          tick: 1,
+          progression: {
+            currentStage: {
+              id: "draft",
+              kind: "multiActivePlayer",
+              activePlayerIds: ["p1", "p2", "p3"],
+              memory: {},
+            },
+            lastActingStage: null,
+          },
+        },
+      },
+      events: [],
+    })) as never;
+    const client = createInProcessClient(executor as never, {
+      viewerId: "p1",
+      initialState: fakeInitialState(),
+    });
+
+    await client.execute({ type: "increment", input: { delta: 1 } });
+    expect(client.viewerId).toBe("p1");
+  });
+
+  test("auto-switch viewer is a no-op when active player matches viewer", async () => {
+    const { executor } = buildFakeExecutor();
+    executor.executeCommand = (() => ({
+      ok: true as const,
+      state: stateWithActivePlayer("p1", 1),
+      events: [],
+    })) as never;
+    const client = createInProcessClient(executor as never, {
+      viewerId: "p1",
+      initialState: fakeInitialState(),
+    });
+
+    let notifications = 0;
+    client.subscribe(() => {
+      notifications += 1;
+    });
+
+    await client.execute({ type: "increment", input: { delta: 1 } });
+    expect(client.viewerId).toBe("p1");
+    // State changed → notify still fires once; viewer just didn't change.
+    expect(notifications).toBe(1);
+  });
+
   test("dispose clears listeners and getView returns null", async () => {
     const { executor } = buildFakeExecutor();
     const client = createInProcessClient(executor as never, {
       viewerId: "p1",
-      initialState: { game: { counter: 0 }, runtime: { tick: 0 } },
+      initialState: fakeInitialState(),
     });
 
     let count = 0;
