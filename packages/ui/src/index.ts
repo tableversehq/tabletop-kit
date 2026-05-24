@@ -1,4 +1,5 @@
 export { TTKitProvider } from "./client/context.tsx";
+export { createGameHooks, type GameHooks } from "./client/create-game-hooks.ts";
 export type { DiscoveryStatus } from "./client/discovery-state.ts";
 export type {
   CommandPayload,
