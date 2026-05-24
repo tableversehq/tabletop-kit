@@ -1,13 +1,5 @@
-import type {
-  CommandDiscoveryResult,
-  DiscoveryStepOption,
-} from "@tabletop-kit/engine";
-import type {
-  CommandPayload,
-  DiscoveryPayload,
-  TTKitClient,
-  TTKitGame,
-} from "./types.ts";
+import type { DiscoveryStepOption } from "@tabletop-kit/engine";
+import type { CommandPayload, TTKitClient, TTKitGame } from "./types.ts";
 
 export type DiscoveryStatus =
   | "idle"
@@ -16,37 +8,64 @@ export type DiscoveryStatus =
   | "executing"
   | "error";
 
-/** Open variant of the engine's discovery result — more options to pick. */
-export type OpenDiscoveryResult = Extract<
-  CommandDiscoveryResult,
+export type OpenResultOf<G extends TTKitGame> = Extract<
+  G["discovery"]["result"],
   { complete: false }
 >;
 
-/** Complete variant — discovery is done and ready to confirm. */
-export type CompleteDiscoveryResult = Extract<
-  CommandDiscoveryResult,
+export type CompleteResultOf<G extends TTKitGame> = Extract<
+  G["discovery"]["result"],
   { complete: true }
 >;
 
-export interface DiscoveryStateSnapshot {
+/**
+ * Per-G pick-option type. Intersected with the engine's
+ * `DiscoveryStepOption` so consumers can rely on `id`/`output`/
+ * `nextInput`/`nextStep` even when TS can't fully resolve the
+ * `Extract<...>` in a generic context.
+ */
+export type PickOptionOf<G extends TTKitGame> = (OpenResultOf<G> extends {
+  options: ReadonlyArray<infer O>;
+}
+  ? O
+  : never) &
+  DiscoveryStepOption;
+
+export type CommandInputOf<G extends TTKitGame> = CompleteResultOf<G>["input"];
+
+/**
+ * `open` carries a `step: string` and a `ReadonlyArray<PickOptionOf<G>>`
+ * of next options. We rebuild the shape via `Omit` rather than
+ * intersecting so the `options` field is the per-G option type (not the
+ * engine base) even in a generic-G context.
+ */
+export type OpenSnapshotResult<G extends TTKitGame> = Omit<
+  OpenResultOf<G>,
+  "options"
+> & {
+  step: string;
+  options: Array<PickOptionOf<G>>;
+};
+
+export interface DiscoveryStateSnapshot<G extends TTKitGame> {
   readonly activeCommandType: string | null;
-  readonly open: OpenDiscoveryResult | null;
-  readonly trail: ReadonlyArray<DiscoveryStepOption>;
-  readonly pendingInput: Record<string, unknown> | null;
+  readonly open: OpenSnapshotResult<G> | null;
+  readonly trail: ReadonlyArray<PickOptionOf<G>>;
+  readonly pendingInput: CommandInputOf<G> | null;
   readonly status: DiscoveryStatus;
   readonly error: string | null;
 }
 
-const IDLE_SNAPSHOT: DiscoveryStateSnapshot = {
-  activeCommandType: null,
-  open: null,
-  trail: [],
-  pendingInput: null,
-  status: "idle",
-  error: null,
-};
-
-type ClientShape = Pick<TTKitClient<TTKitGame>, "discover" | "execute">;
+function createIdleSnapshot<G extends TTKitGame>(): DiscoveryStateSnapshot<G> {
+  return {
+    activeCommandType: null,
+    open: null,
+    trail: [],
+    pendingInput: null,
+    status: "idle",
+    error: null,
+  };
+}
 
 /**
  * Pure (non-React) discovery state machine.
@@ -55,15 +74,20 @@ type ClientShape = Pick<TTKitClient<TTKitGame>, "discover" | "execute">;
  * useDiscovery exposes. Drives client.discover and client.execute, surfaces
  * results through a single `subscribe`-style observer interface so the
  * React hook can plug it into useSyncExternalStore.
+ *
+ * `G` defaults to `TTKitGame` for internal/test use; the factory binds it
+ * to the bundle's game shape so the snapshot is fully typed.
  */
-export class DiscoveryState {
-  private snapshot: DiscoveryStateSnapshot = IDLE_SNAPSHOT;
+export class DiscoveryState<G extends TTKitGame = TTKitGame> {
+  private snapshot: DiscoveryStateSnapshot<G> = createIdleSnapshot<G>();
   private readonly listeners = new Set<() => void>();
   private flowId = 0;
 
-  constructor(private readonly client: ClientShape) {}
+  constructor(
+    private readonly client: Pick<TTKitClient<G>, "discover" | "execute">,
+  ) {}
 
-  getSnapshot(): DiscoveryStateSnapshot {
+  getSnapshot(): DiscoveryStateSnapshot<G> {
     return this.snapshot;
   }
 
@@ -74,7 +98,7 @@ export class DiscoveryState {
     };
   }
 
-  start(payload: DiscoveryPayload): void {
+  start(payload: G["discovery"]["payload"]): void {
     const flow = ++this.flowId;
     this.setSnapshot({
       activeCommandType: payload.type,
@@ -87,7 +111,7 @@ export class DiscoveryState {
     void this.runDiscover(flow, payload);
   }
 
-  pick(option: DiscoveryStepOption): void {
+  pick(option: PickOptionOf<G>): void {
     const current = this.snapshot;
     if (
       current.status !== "discovering" ||
@@ -101,11 +125,14 @@ export class DiscoveryState {
       trail: [...current.trail, option],
       status: "discovering",
     });
+    // The engine guarantees that picking an option from an open result
+    // produces a valid next-step payload; TS can't see the constructed
+    // shape extends G["discovery"]["payload"] in a generic context.
     void this.runDiscover(flow, {
       type: current.activeCommandType,
       step: option.nextStep,
       input: option.nextInput,
-    });
+    } as G["discovery"]["payload"]);
   }
 
   confirm(): void {
@@ -121,32 +148,32 @@ export class DiscoveryState {
     const command = {
       type: current.activeCommandType,
       input: current.pendingInput,
-    };
+    } as CommandPayload;
     this.setSnapshot({ ...current, status: "executing" });
     void this.runExecute(flow, command);
   }
 
   cancel(): void {
     this.flowId++;
-    this.setSnapshot(IDLE_SNAPSHOT);
+    this.setSnapshot(createIdleSnapshot<G>());
   }
 
   private async runDiscover(
     flow: number,
-    payload: DiscoveryPayload,
+    payload: G["discovery"]["payload"],
   ): Promise<void> {
     try {
       const result = await this.client.discover(payload);
       if (this.flowId !== flow) return;
 
-      if (result.complete) {
+      if (isCompleteResult<G>(result)) {
         this.setSnapshot({
           ...this.snapshot,
           open: null,
           pendingInput: result.input,
           status: "ready_to_confirm",
         });
-      } else {
+      } else if (isOpenResult<G>(result)) {
         this.setSnapshot({
           ...this.snapshot,
           open: result,
@@ -168,11 +195,11 @@ export class DiscoveryState {
     command: CommandPayload,
   ): Promise<void> {
     try {
-      const result = await this.client.execute(command);
+      const result = await this.client.execute(command as G["command"]);
       if (this.flowId !== flow) return;
 
       if (result.accepted) {
-        this.setSnapshot(IDLE_SNAPSHOT);
+        this.setSnapshot(createIdleSnapshot<G>());
       } else {
         this.setSnapshot({
           ...this.snapshot,
@@ -190,12 +217,34 @@ export class DiscoveryState {
     }
   }
 
-  private setSnapshot(next: DiscoveryStateSnapshot): void {
+  private setSnapshot(next: DiscoveryStateSnapshot<G>): void {
     this.snapshot = next;
     for (const listener of this.listeners) {
       listener();
     }
   }
+}
+
+function isCompleteResult<G extends TTKitGame>(
+  result: G["discovery"]["result"],
+): result is CompleteResultOf<G> {
+  return resultComplete(result) === true;
+}
+
+function isOpenResult<G extends TTKitGame>(
+  result: G["discovery"]["result"],
+): result is OpenSnapshotResult<G> {
+  return resultComplete(result) === false;
+}
+
+function resultComplete(result: unknown): boolean | undefined {
+  return isRecord(result) && typeof result.complete === "boolean"
+    ? result.complete
+    : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function errorMessage(error: unknown): string {

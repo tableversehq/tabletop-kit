@@ -1,4 +1,3 @@
-import type { DiscoveryStepOption } from "@tabletop-kit/engine";
 import {
   createContext,
   useContext,
@@ -8,26 +7,14 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { DiscoveryState, type DiscoveryStatus } from "./discovery-state.ts";
+import {
+  DiscoveryState,
+  type CommandInputOf,
+  type DiscoveryStatus,
+  type OpenSnapshotResult,
+  type PickOptionOf,
+} from "./discovery-state.ts";
 import type { TTKitClient, TTKitGame } from "./types.ts";
-
-type OpenResultOf<G extends TTKitGame> = Extract<
-  G["discovery"]["result"],
-  { complete: false }
->;
-
-type PickOptionOf<G extends TTKitGame> =
-  OpenResultOf<G> extends { options: ReadonlyArray<infer O> } ? O : never;
-
-type CompleteResultOf<G extends TTKitGame> = Extract<
-  G["discovery"]["result"],
-  { complete: true }
->;
-
-type CommandInputOf<G extends TTKitGame> =
-  CompleteResultOf<G> extends { input: infer I } ? I : never;
-
-type DiscoveryPayloadOf<G extends TTKitGame> = G["discovery"]["payload"];
 
 export interface TTKitProviderProps<G extends TTKitGame> {
   client: TTKitClient<G>;
@@ -36,12 +23,12 @@ export interface TTKitProviderProps<G extends TTKitGame> {
 
 export interface UseDiscoveryResult<G extends TTKitGame> {
   activeCommandType: string | null;
-  open: OpenResultOf<G> | null;
+  open: OpenSnapshotResult<G> | null;
   trail: ReadonlyArray<PickOptionOf<G>>;
   pendingInput: CommandInputOf<G> | null;
   status: DiscoveryStatus;
   error: string | null;
-  start: (payload: DiscoveryPayloadOf<G>) => void;
+  start: (payload: G["discovery"]["payload"]) => void;
   pick: (option: PickOptionOf<G>) => void;
   confirm: () => void;
   cancel: () => void;
@@ -93,7 +80,7 @@ export interface GameHooks<G extends TTKitGame> {
 
 interface BundleContextValue<G extends TTKitGame> {
   client: TTKitClient<G>;
-  discovery: DiscoveryState;
+  discovery: DiscoveryState<G>;
 }
 
 /**
@@ -144,10 +131,7 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
     const value = useMemo<BundleContextValue<G>>(
       () => ({
         client,
-        // DiscoveryState is structurally typed against payload/result
-        // shapes shared by all games at runtime; the bundle's typed
-        // client widens cleanly via the never-cast.
-        discovery: new DiscoveryState(client as never),
+        discovery: new DiscoveryState<G>(client),
       }),
       [client],
     );
@@ -168,10 +152,9 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
     isEqual: (a: TSelected, b: TSelected) => boolean = Object.is,
   ): TSelected {
     const { client } = useBundleContext();
-    const cache = useRef<{ selected: TSelected; hasValue: boolean }>({
-      selected: undefined as TSelected,
-      hasValue: false,
-    });
+    const cache = useRef<
+      { hasValue: true; selected: TSelected } | { hasValue: false }
+    >({ hasValue: false });
 
     const getSnapshot = (): TSelected => {
       const view = client.getView();
@@ -184,50 +167,60 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
       if (cache.current.hasValue && isEqual(cache.current.selected, next)) {
         return cache.current.selected;
       }
-      cache.current = { selected: next, hasValue: true };
+      cache.current = { hasValue: true, selected: next };
       return next;
     };
 
     return useSyncExternalStore(client.subscribe.bind(client), getSnapshot);
   }
 
-  function useGameStateOrNullImpl<TSelected>(
+  function useGameStateOrNull(): G["view"] | null;
+  function useGameStateOrNull<TSelected>(
+    selector: (view: G["view"]) => TSelected,
+    isEqual?: (a: TSelected, b: TSelected) => boolean,
+  ): TSelected | null;
+  function useGameStateOrNull<TSelected>(
     selector?: (view: G["view"]) => TSelected,
     isEqual: (a: TSelected, b: TSelected) => boolean = Object.is,
   ): TSelected | G["view"] | null {
     const { client } = useBundleContext();
-    const cache = useRef<{
-      selected: TSelected | G["view"] | null;
-      hasValue: boolean;
-    }>({
-      selected: null,
-      hasValue: false,
-    });
+    type CacheState =
+      | { kind: "empty" }
+      | { kind: "null" }
+      | { kind: "selected"; value: TSelected }
+      | { kind: "raw"; value: G["view"] };
+    const cache = useRef<CacheState>({ kind: "empty" });
 
     const getSnapshot = (): TSelected | G["view"] | null => {
       const view = client.getView();
       if (view === null) {
-        if (cache.current.hasValue && cache.current.selected === null) {
-          return cache.current.selected;
-        }
-        cache.current = { selected: null, hasValue: true };
+        if (cache.current.kind === "null") return null;
+        cache.current = { kind: "null" };
         return null;
       }
-      const next = selector ? selector(view) : view;
-      if (
-        cache.current.hasValue &&
-        cache.current.selected !== null &&
-        isEqual(cache.current.selected as TSelected, next as TSelected)
-      ) {
-        return cache.current.selected;
+      if (selector) {
+        const next = selector(view);
+        if (
+          cache.current.kind === "selected" &&
+          isEqual(cache.current.value, next)
+        ) {
+          return cache.current.value;
+        }
+        cache.current = { kind: "selected", value: next };
+        return next;
       }
-      cache.current = { selected: next, hasValue: true };
-      return next;
+      if (
+        cache.current.kind === "raw" &&
+        Object.is(cache.current.value, view)
+      ) {
+        return cache.current.value;
+      }
+      cache.current = { kind: "raw", value: view };
+      return view;
     };
 
     return useSyncExternalStore(client.subscribe.bind(client), getSnapshot);
   }
-  const useGameStateOrNull = useGameStateOrNullImpl as UseGameStateOrNullOf<G>;
 
   function useGameEvents(
     handler: (event: G["event"]) => void,
@@ -266,7 +259,7 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
       [discovery],
     );
 
-    return { ...snapshot, ...actions } as unknown as UseDiscoveryResult<G>;
+    return { ...snapshot, ...actions };
   }
 
   function useSelectable(
@@ -276,7 +269,7 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
     const discovery = useDiscovery();
 
     const alreadyPicked = discovery.trail.some((option) =>
-      optionMatchesTarget(option as DiscoveryStepOption, target),
+      optionMatchesTarget(option, target),
     );
 
     if (alreadyPicked) {
@@ -287,16 +280,12 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
       return { state: "idle", onClick: noop, option: null };
     }
 
-    const open = discovery.open as unknown as {
-      step: string;
-      options: ReadonlyArray<PickOptionOf<G>>;
-    };
-    if (open.step !== slot) {
+    if (discovery.open.step !== slot) {
       return { state: "unselectable", onClick: noop, option: null };
     }
 
-    const matching = open.options.find((option) =>
-      optionMatchesTarget(option as DiscoveryStepOption, target),
+    const matching = discovery.open.options.find((option) =>
+      optionMatchesTarget(option, target),
     );
 
     if (!matching) {
@@ -334,31 +323,21 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
   };
 }
 
-function optionMatchesTarget(
-  option: DiscoveryStepOption,
-  target: unknown,
-): boolean {
-  if (target === undefined || target === null) {
-    return false;
-  }
+function optionMatchesTarget(option: unknown, target: unknown): boolean {
+  if (!isRecord(option)) return false;
   const output = option.output;
-  if (typeof target !== "object") {
-    for (const value of Object.values(output)) {
-      if (value === target) return true;
-    }
-    return false;
+  if (!isRecord(output)) return false;
+
+  if (!isRecord(target)) {
+    if (target === undefined || target === null) return false;
+    return Object.values(output).some((value) => value === target);
   }
-  return shallowMatch(output, target as Record<string, unknown>);
+
+  return Object.keys(target).every((key) => output[key] === target[key]);
 }
 
-function shallowMatch(
-  output: Record<string, unknown>,
-  target: Record<string, unknown>,
-): boolean {
-  for (const key of Object.keys(target)) {
-    if (output[key] !== target[key]) return false;
-  }
-  return true;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function noop(): void {}
