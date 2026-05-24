@@ -1,11 +1,5 @@
 export { TTKitProvider } from "./client/context.tsx";
-export {
-  DiscoveryState,
-  type CompleteDiscoveryResult,
-  type DiscoveryStateSnapshot,
-  type DiscoveryStatus,
-  type OpenDiscoveryResult,
-} from "./client/discovery-state.ts";
+export type { DiscoveryStatus } from "./client/discovery-state.ts";
 export type {
   CommandPayload,
   DiscoveryPayload,
