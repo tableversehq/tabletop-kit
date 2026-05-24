@@ -1,9 +1,5 @@
 import type { CanonicalState, GameExecutor } from "@tabletop-kit/engine";
-import type {
-  RegisteredGame,
-  TTKitClient,
-  TTKitGame,
-} from "../client/types.ts";
+import type { TTKitClient, TTKitGame } from "../client/types.ts";
 
 export interface CreateInProcessClientOptions<GameState extends object> {
   viewerId: string;
@@ -21,12 +17,13 @@ export interface CreateInProcessClientOptions<GameState extends object> {
  * a replay) and hands it in. The adapter owns the running-game phase: state
  * mutation, subscriber notification, event fan-out.
  *
- * `G` defaults to the augmented `RegisteredGame`; `GameState` and
- * `SetupInput` are inferred from the `executor` argument. In the common
- * case, no generics need to be specified at the call site.
+ * `G` defaults to the unparameterized `TTKitGame` shape; pass `G`
+ * explicitly to get typed view/event/command shapes, or use the
+ * `createGameHooks<G>()` factory to bind the type once across the app.
+ * `GameState` and `SetupInput` are inferred from the `executor` argument.
  */
 export function createInProcessClient<
-  G extends TTKitGame = RegisteredGame,
+  G extends TTKitGame = TTKitGame,
   GameState extends object = object,
   SetupInput extends object | undefined = undefined,
 >(

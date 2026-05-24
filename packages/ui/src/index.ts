@@ -5,10 +5,8 @@ export type {
   DiscoveryPayload,
   DiscoveryResult,
   ExecutionResult,
-  RegisteredGame,
   TTKitClient,
   TTKitGame,
-  TTKitGameRegistry,
 } from "./client/types.ts";
 
 export {

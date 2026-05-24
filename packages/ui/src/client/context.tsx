@@ -6,27 +6,27 @@ import {
   type ReactNode,
 } from "react";
 import { DiscoveryState } from "./discovery-state.ts";
-import type { RegisteredGame, TTKitClient } from "./types.ts";
+import type { TTKitClient, TTKitGame } from "./types.ts";
 
 export interface TTKitContextValue {
-  client: TTKitClient<RegisteredGame>;
+  client: TTKitClient<TTKitGame>;
   discovery: DiscoveryState;
 }
 
 export const TTKitContext = createContext<TTKitContextValue | null>(null);
 
-export interface TTKitProviderProps {
-  client: TTKitClient<RegisteredGame>;
+export interface TTKitProviderProps<G extends TTKitGame = TTKitGame> {
+  client: TTKitClient<G>;
   children: ReactNode;
 }
 
-export function TTKitProvider({
+export function TTKitProvider<G extends TTKitGame = TTKitGame>({
   client,
   children,
-}: TTKitProviderProps): ReactNode {
+}: TTKitProviderProps<G>): ReactNode {
   const value = useMemo<TTKitContextValue>(
     () => ({
-      client,
+      client: client as TTKitClient<TTKitGame>,
       // DiscoveryState is intentionally non-generic — it works against the
       // structural payload/result shapes that all games conform to at
       // runtime. The widening cast is localized to this one site.
