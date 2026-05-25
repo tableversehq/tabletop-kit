@@ -22,7 +22,6 @@ describe("createGameHooks", () => {
 
     expect(typeof hooks.TTKitProvider).toBe("function");
     expect(typeof hooks.useGameState).toBe("function");
-    expect(typeof hooks.useGameStateOrNull).toBe("function");
     expect(typeof hooks.useGameEvents).toBe("function");
     expect(typeof hooks.useDiscovery).toBe("function");
     expect(typeof hooks.useSelectable).toBe("function");

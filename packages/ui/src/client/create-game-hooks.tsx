@@ -50,17 +50,11 @@ export interface UseGameEventsOptions<TEvent> {
   filter?: (event: TEvent) => boolean;
 }
 
-interface UseGameStateOrNullOf<G extends TTKitGame> {
-  (): G["view"] | null;
-  <TSelected>(selector: (view: G["view"]) => TSelected): TSelected | null;
-}
-
 export interface GameHooks<G extends TTKitGame> {
   readonly TTKitProvider: (props: TTKitProviderProps<G>) => ReactNode;
   readonly useGameState: <TSelected>(
     selector: (view: G["view"]) => TSelected,
   ) => TSelected;
-  readonly useGameStateOrNull: UseGameStateOrNullOf<G>;
   readonly useGameEvents: (
     handler: (event: G["event"]) => void,
     options?: UseGameEventsOptions<G["event"]>,
@@ -100,7 +94,6 @@ interface BundleContextValue<G extends TTKitGame> {
  *   useSelectable,
  *   useTTKitClient,
  *   useViewerId,
- *   useGameStateOrNull,
  * } = createGameHooks<SplendorGame>();
  * ```
  *
@@ -151,26 +144,10 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
       const view = client.getView();
       if (view === null) {
         throw new Error(
-          "useGameState: no view loaded. Use useGameStateOrNull or render a loading state first.",
+          "useGameState: no view loaded. Render a loading state at a parent boundary before mounting this hook.",
         );
       }
       return selector(view);
-    };
-    return useSyncExternalStore(client.subscribe.bind(client), getSnapshot);
-  }
-
-  function useGameStateOrNull(): G["view"] | null;
-  function useGameStateOrNull<TSelected>(
-    selector: (view: G["view"]) => TSelected,
-  ): TSelected | null;
-  function useGameStateOrNull<TSelected>(
-    selector?: (view: G["view"]) => TSelected,
-  ): TSelected | G["view"] | null {
-    const { client } = useBundleContext();
-    const getSnapshot = (): TSelected | G["view"] | null => {
-      const view = client.getView();
-      if (view === null) return null;
-      return selector ? selector(view) : view;
     };
     return useSyncExternalStore(client.subscribe.bind(client), getSnapshot);
   }
@@ -267,7 +244,6 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
   return {
     TTKitProvider,
     useGameState,
-    useGameStateOrNull,
     useGameEvents,
     useDiscovery,
     useSelectable,
