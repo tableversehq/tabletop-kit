@@ -86,10 +86,10 @@ function createIdleSnapshot<G extends TTKitGame>(): DiscoveryStateSnapshot<G> {
  * results through a single `subscribe`-style observer interface so the
  * React hook can plug it into useSyncExternalStore.
  *
- * `G` defaults to `TTKitGame` for internal/test use; the factory binds it
- * to the bundle's game shape so the snapshot is fully typed.
+ * `G` must be passed explicitly — the factory binds it to the bundle's
+ * game shape; tests use `<TTKitGame>` for the structural-default case.
  */
-export class DiscoveryState<G extends TTKitGame = TTKitGame> {
+export class DiscoveryState<G extends TTKitGame> {
   private snapshot: DiscoveryStateSnapshot<G> = createIdleSnapshot<G>();
   private readonly listeners = new Set<() => void>();
   private flowId = 0;
