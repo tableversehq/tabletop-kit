@@ -632,11 +632,11 @@ export type DiscoveryContext<
 };
 
 export type CommandDiscoveryResult<
-  TStep extends string = string,
-  TNextInput extends DiscoveryData = DiscoveryData,
-  TOutput extends DiscoveryData = DiscoveryData,
-  TCommandInput extends CommandData = CommandData,
-  TNextStep extends string = string,
+  TStep extends string,
+  TNextInput extends DiscoveryData,
+  TOutput extends DiscoveryData,
+  TCommandInput extends CommandData,
+  TNextStep extends string,
 > =
   | {
       complete: false;
@@ -647,6 +647,14 @@ export type CommandDiscoveryResult<
       complete: true;
       input: TCommandInput;
     };
+
+export type AnyCommandDiscoveryResult = CommandDiscoveryResult<
+  string,
+  DiscoveryData,
+  DiscoveryData,
+  CommandData,
+  string
+>;
 
 type DiscoveryStepOutput<TStep extends AnyDiscoveryStepDefinition> =
   TStep extends {

@@ -435,7 +435,8 @@ test("discovery types compose for step-authored options and completion", () => {
       label: string;
       targetId: number;
     },
-    PlayCardInput
+    PlayCardInput,
+    "complete"
   > = {
     complete: false,
     step: "select_target",
@@ -463,7 +464,8 @@ test("discovery types compose for step-authored options and completion", () => {
       label: string;
       targetId: number;
     },
-    PlayCardInput
+    PlayCardInput,
+    "complete"
   > = {
     complete: true,
     input: {
