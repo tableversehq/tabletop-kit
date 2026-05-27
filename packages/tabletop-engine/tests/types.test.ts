@@ -927,6 +927,9 @@ test("game executor discoverCommand preserves full discovery result types", () =
     .validate(() => ({ ok: true as const }))
     .execute(() => {})
     .build();
+  const commandStepProbe: "select_amount" | "confirm_selection" =
+    command.discovery!.steps[0]!.stepId;
+  void commandStepProbe;
 
   const terminalStage = defineStage("terminal").automatic().build();
   const initialStage = defineStage("turn")
@@ -954,14 +957,16 @@ test("game executor discoverCommand preserves full discovery result types", () =
 
   if (discoveryResult?.complete === false) {
     const step: "select_amount" | "confirm_selection" = discoveryResult.step;
-    const firstOption = discoveryResult.options[0];
+    void step;
+    const firstOptionForNextStep = discoveryResult.options[0];
 
-    if (firstOption?.nextStep === "confirm_selection") {
-      const amount: number = firstOption.nextInput.amount;
+    if (firstOptionForNextStep?.nextStep === "confirm_selection") {
+      const amount: number = firstOptionForNextStep.nextInput.amount;
       void amount;
     }
 
-    if (step === "select_amount") {
+    if (discoveryResult.step === "select_amount") {
+      const firstOption = discoveryResult.options[0];
       const label: string | undefined = firstOption?.output.label;
       const amount: number | undefined = firstOption?.output.amount;
 
