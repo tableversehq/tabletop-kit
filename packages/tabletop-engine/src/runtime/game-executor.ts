@@ -13,7 +13,7 @@ import {
 import type {
   Command,
   CommandDefinition,
-  CommandDiscoveryResultFromDefinitions,
+  CommandDiscoveryResultFor,
   Discovery,
   DiscoveryStepOption,
 } from "../types/command";
@@ -61,7 +61,7 @@ type SetupInputFromDefinition<TGame> =
 export interface GameExecutor<
   GameState extends object,
   SetupInput extends object | undefined = undefined,
-  DiscoveryResult = never,
+  CommandDefinition = never,
 > {
   createInitialState: CreateInitialStateFn<GameState, SetupInput>;
   getView(
@@ -77,7 +77,7 @@ export interface GameExecutor<
   discoverCommand(
     state: CanonicalState<GameState>,
     discovery: Discovery,
-  ): DiscoveryResult | null;
+  ): CommandDiscoveryResultFor<CommandDefinition> | null;
   executeCommand(
     state: CanonicalState<GameState>,
     command: Command,
@@ -299,7 +299,7 @@ export function createGameExecutor<
 ): GameExecutor<
   CanonicalGameState<FacadeGameStateFromDefinition<TGame>>,
   SetupInputFromDefinition<TGame>,
-  CommandDiscoveryResultFromDefinitions<TGame["__commandDefinitions"]>
+  TGame["__commandDefinitions"]
 >;
 
 export function createGameExecutor<
@@ -311,7 +311,7 @@ export function createGameExecutor<
 ): GameExecutor<
   CanonicalGameState<FacadeGameState>,
   SetupInput,
-  CommandDiscoveryResultFromDefinitions<CommandDefinitions>
+  CommandDefinitions
 > {
   const createInitialState = (
     firstArg: string | number | SetupInput,
@@ -545,7 +545,7 @@ export function createGameExecutor<
         return {
           complete: true,
           input: completion.input,
-        } as CommandDiscoveryResultFromDefinitions<CommandDefinitions>;
+        } as CommandDiscoveryResultFor<CommandDefinitions>;
       }
 
       const discoveryOptions: Array<DiscoveryStepOption> = [];
@@ -586,7 +586,7 @@ export function createGameExecutor<
         complete: false,
         step: discovery.step,
         options: discoveryOptions,
-      } as CommandDiscoveryResultFromDefinitions<CommandDefinitions>;
+      } as CommandDiscoveryResultFor<CommandDefinitions>;
     },
 
     executeCommand(state, command) {
