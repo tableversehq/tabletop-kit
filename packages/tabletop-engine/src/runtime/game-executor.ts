@@ -318,7 +318,7 @@ export function createGameExecutor<
     secondArg?: string | number,
   ): CanonicalState<CanonicalGameState<FacadeGameState>> => {
     const hasSetupInput = !!game.setupInputSchema;
-    const input = hasSetupInput ? (firstArg as SetupInput) : undefined;
+    const input = hasSetupInput ? firstArg : undefined;
     const rngSeed = hasSetupInput ? secondArg : firstArg;
 
     if (
@@ -380,10 +380,7 @@ export function createGameExecutor<
   };
 
   return {
-    createInitialState: createInitialState as CreateInitialStateFn<
-      CanonicalGameState<FacadeGameState>,
-      SetupInput
-    >,
+    createInitialState: createInitialState,
 
     getView(state, viewer) {
       validateCanonicalState(game, state);
@@ -653,7 +650,7 @@ export function createGameExecutor<
           reason: "stage_not_accepting_commands",
           metadata: { stageId: state.runtime.progression.currentStage.id },
           events: [],
-        } as ExecutionFailure<
+        } satisfies ExecutionFailure<
           CanonicalState<CanonicalGameState<FacadeGameState>>
         >;
       }
