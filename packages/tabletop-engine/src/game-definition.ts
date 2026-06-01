@@ -1,5 +1,5 @@
 import type {
-  CommandDefinition,
+  RuntimeCommandDefinition,
   CommandDefinitionShape,
 } from "./types/command";
 import type {
@@ -26,7 +26,7 @@ import type { TSchema } from "@sinclair/typebox";
 
 type CommandDefinitionMap<FacadeGameState extends GameState> = Record<
   string,
-  CommandDefinition<FacadeGameState>
+  RuntimeCommandDefinition<FacadeGameState>
 >;
 
 type SetupInputFromSchema<

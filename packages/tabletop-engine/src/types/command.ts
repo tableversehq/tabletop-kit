@@ -361,7 +361,7 @@ export type CommandDefinitionShape<
     >
   | NonDiscoverableCommandDefinition<FacadeGameState, TCommandInput>;
 
-export type CommandDefinition<FacadeGameState extends BaseGameState> = {
+export type RuntimeCommandDefinition<FacadeGameState extends BaseGameState> = {
   commandId: string;
   commandSchema: CommandSchema<Record<string, unknown>>;
   discovery?: DiscoveryDefinition;

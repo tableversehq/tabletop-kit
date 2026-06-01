@@ -15,7 +15,7 @@ import {
 } from "./events";
 import type {
   Command,
-  CommandDefinition,
+  RuntimeCommandDefinition,
   CommandDefinitionShape,
   CommandDiscoveryResultFor,
   Discovery,
@@ -56,7 +56,7 @@ type AnyGameDefinition<
 export interface GameExecutor<
   GameState extends object,
   SetupInput extends object | undefined = undefined,
-  CommandDefinition = never,
+  TCommandDefinition = never,
 > {
   createInitialState: CreateInitialStateFn<GameState, SetupInput>;
   getView(
@@ -72,7 +72,7 @@ export interface GameExecutor<
   discoverCommand(
     state: CanonicalState<GameState>,
     discovery: Discovery,
-  ): CommandDiscoveryResultFor<CommandDefinition> | null;
+  ): CommandDiscoveryResultFor<TCommandDefinition> | null;
   executeCommand(
     state: CanonicalState<GameState>,
     command: Command,
@@ -951,7 +951,7 @@ function executeCommandAgainstState<
 >(
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
-  definition: CommandDefinition<FacadeGameState>,
+  definition: RuntimeCommandDefinition<FacadeGameState>,
   command: Command,
   rng: ReturnType<typeof createRNGService>,
   emitEvent: (event: GameEvent) => void,

@@ -44,7 +44,6 @@ export type {
   CommandAvailabilityContext,
   AnyCommandDiscoveryResult,
   AnyDiscoveryStepDefinition,
-  CommandDefinition,
   CommandSchema,
   CommandDiscoveryResult,
   Command,
