@@ -393,6 +393,8 @@ export function createGameExecutor<
   return createGameExecutorWithoutSetup(game);
 }
 
+// Factories use `object` for SetupInput internally; the public overloads on
+// `createGameExecutor` preserve the caller's concrete SetupInput type.
 function createGameExecutorWithSetup<
   FacadeGameState extends BaseGameState,
   CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
@@ -409,13 +411,6 @@ function createGameExecutorWithSetup<
 > {
   return {
     createInitialState(input, rngSeed) {
-      if (
-        rngSeed === undefined &&
-        (typeof input === "string" || typeof input === "number")
-      ) {
-        throw new Error("setup_input_required");
-      }
-
       return initializeGameState(game, input, rngSeed);
     },
     ...createExecutorMethods(game),

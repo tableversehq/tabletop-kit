@@ -199,6 +199,11 @@ export class GameDefinitionBuilder<
       __commandDefinitions: undefined as unknown as CommandDefinitions,
     };
 
+    // Irreducible construction-boundary assertion: TS can't prove
+    // `setupInputSchema` presence corresponds to the static `SetupInput`
+    // parameter, and `setup`'s contravariance over a generic `SetupInput`
+    // blocks a cast-free union return. Quarantined here so everything
+    // downstream stays cast-free.
     if (this.config.setupInputSchema) {
       return {
         ...baseDefinition,
