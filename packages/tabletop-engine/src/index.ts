@@ -18,7 +18,12 @@ export {
 export { createSnapshot, restoreSnapshot } from "./snapshot/snapshot";
 export { runScenario } from "./testing/harness";
 
-export type { GameDefinition, GameSetupContext } from "./game-definition";
+export type {
+  GameDefinition,
+  GameDefinitionWithSetupInput,
+  GameDefinitionWithoutSetupInput,
+  GameSetupContext,
+} from "./game-definition";
 export type { GameExecutor } from "./runtime/game-executor";
 export type {
   ArraySchemaStatic,
@@ -38,6 +43,7 @@ export type {
 export type {
   CommandAvailabilityContext,
   AnyCommandDiscoveryResult,
+  AnyDiscoveryStepDefinition,
   CommandDefinition,
   CommandSchema,
   CommandDiscoveryResult,
@@ -47,6 +53,7 @@ export type {
   DiscoveryStepContext,
   DiscoveryStepDefinition,
   DiscoveryStepOption,
+  DiscoveryStepResolveFn,
   DiscoveryStepResult,
   CommandFromSchema,
   DiscoveryContext,

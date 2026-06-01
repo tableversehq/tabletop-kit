@@ -1,4 +1,7 @@
-import type { CommandDefinition } from "./types/command";
+import type {
+  CommandDefinition,
+  CommandDefinitionShape,
+} from "./types/command";
 import type {
   CommandDefinitionsFromStageDefinition,
   StageDefinition,
@@ -43,43 +46,57 @@ export interface GameSetupContext<
   input: SetupInput;
 }
 
-export interface GameDefinition<
+interface BaseGameDefinition<
   FacadeGameState extends GameState,
-  SetupInput extends object | undefined = undefined,
-  CommandDefinitions = CommandDefinition<FacadeGameState>,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
 > {
   name: string;
   commands: CommandDefinitionMap<FacadeGameState>;
   stateFacade: CompiledStateFacadeDefinition;
   canonicalGameStateSchema: ObjectFieldType<Record<string, FieldType>>;
   runtimeStateSchema: TSchema;
-  setupInputSchema?: ObjectFieldType<Record<string, FieldType>>;
   defaultCanonicalGameState: CanonicalGameState<FacadeGameState>;
   initialStage: StageDefinition<FacadeGameState>;
   stages: Record<string, StageDefinition<FacadeGameState>>;
-  setup?: (context: GameSetupContext<FacadeGameState, SetupInput>) => void;
   readonly __commandDefinitions: CommandDefinitions;
 }
+
+export interface GameDefinitionWithoutSetupInput<
+  FacadeGameState extends GameState,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
+> extends BaseGameDefinition<FacadeGameState, CommandDefinitions> {
+  setupInputSchema?: undefined;
+  setup?: (context: GameSetupContext<FacadeGameState, undefined>) => void;
+}
+
+export interface GameDefinitionWithSetupInput<
+  FacadeGameState extends GameState,
+  SetupInput extends object,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
+> extends BaseGameDefinition<FacadeGameState, CommandDefinitions> {
+  setupInputSchema: ObjectFieldType<Record<string, FieldType>>;
+  setup?: (context: GameSetupContext<FacadeGameState, SetupInput>) => void;
+}
+
+export type GameDefinition<
+  FacadeGameState extends GameState,
+  SetupInput extends object | undefined,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
+> = [SetupInput] extends [undefined]
+  ? GameDefinitionWithoutSetupInput<FacadeGameState, CommandDefinitions>
+  : GameDefinitionWithSetupInput<
+      FacadeGameState,
+      Extract<SetupInput, object>,
+      CommandDefinitions
+    >;
 
 interface GameDefinitionBuilderState<
   FacadeGameState extends GameState = GameState,
   SetupInput extends object | undefined = undefined,
-  CommandDefinitions = CommandDefinition<FacadeGameState>,
-> extends Partial<
-  Omit<
-    GameDefinition<FacadeGameState, SetupInput, CommandDefinitions>,
-    | "commands"
-    | "stateFacade"
-    | "canonicalGameStateSchema"
-    | "runtimeStateSchema"
-    | "defaultCanonicalGameState"
-    | "stages"
-    | "setup"
-    | "__commandDefinitions"
-  >
 > {
   name: string;
   rootState?: GameStateClass<FacadeGameState>;
+  setupInputSchema?: ObjectFieldType<Record<string, FieldType>>;
   initialStage?: StageDefinition<FacadeGameState>;
   setup?: (context: GameSetupContext<FacadeGameState, SetupInput>) => void;
 }
@@ -87,12 +104,11 @@ interface GameDefinitionBuilderState<
 export class GameDefinitionBuilder<
   FacadeGameState extends GameState = GameState,
   SetupInput extends object | undefined = undefined,
-  CommandDefinitions = CommandDefinition<FacadeGameState>,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState> = never,
 > {
   private readonly config: GameDefinitionBuilderState<
     FacadeGameState,
-    SetupInput,
-    CommandDefinitions
+    SetupInput
   >;
 
   constructor(name: string) {
@@ -103,12 +119,13 @@ export class GameDefinitionBuilder<
 
   rootState<NextFacadeGameState extends GameState>(
     rootState: GameStateClass<NextFacadeGameState>,
-  ): GameDefinitionBuilder<NextFacadeGameState, SetupInput> {
+  ): GameDefinitionBuilder<NextFacadeGameState, SetupInput, never> {
     this.config.rootState =
       rootState as unknown as GameStateClass<FacadeGameState>;
     return this as unknown as GameDefinitionBuilder<
       NextFacadeGameState,
-      SetupInput
+      SetupInput,
+      never
     >;
   }
 
@@ -167,19 +184,34 @@ export class GameDefinitionBuilder<
     );
     assertSchemaValue(canonicalGameStateSchema, defaultCanonicalGameState);
 
-    return {
+    const baseDefinition: BaseGameDefinition<
+      FacadeGameState,
+      CommandDefinitions
+    > = {
       name: this.config.name,
       commands,
       stateFacade,
       canonicalGameStateSchema,
       runtimeStateSchema,
-      setupInputSchema: this.config.setupInputSchema,
       defaultCanonicalGameState,
       initialStage: this.config.initialStage,
       stages,
-      setup: this.config.setup,
-      __commandDefinitions: undefined as CommandDefinitions,
+      __commandDefinitions: undefined as unknown as CommandDefinitions,
     };
+
+    if (this.config.setupInputSchema) {
+      return {
+        ...baseDefinition,
+        setupInputSchema: this.config.setupInputSchema,
+        setup: this.config.setup,
+      } as GameDefinition<FacadeGameState, SetupInput, CommandDefinitions>;
+    }
+
+    return {
+      ...baseDefinition,
+      setupInputSchema: undefined,
+      setup: this.config.setup,
+    } as GameDefinition<FacadeGameState, SetupInput, CommandDefinitions>;
   }
 
   setup(

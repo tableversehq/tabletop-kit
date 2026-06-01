@@ -1,8 +1,12 @@
 import { Value } from "@sinclair/typebox/value";
 import type { TSchema } from "@sinclair/typebox";
-import type { GameDefinition } from "../game-definition";
+import type {
+  GameDefinitionWithSetupInput,
+  GameDefinitionWithoutSetupInput,
+} from "../game-definition";
 import type { CanonicalGameState } from "../state-facade/canonical";
 import type { GameState as BaseGameState } from "../state-facade/metadata";
+import type { CommandDefinitionShape } from "../types/command";
 import type { CanonicalState, RuntimeState } from "../types/state";
 
 export function assertSchemaValue(schema: TSchema, value: unknown): void {
@@ -17,10 +21,11 @@ export function assertSchemaValue(schema: TSchema, value: unknown): void {
 
 export function validateCanonicalGameState<
   FacadeGameState extends BaseGameState,
-  SetupInput extends object | undefined,
-  CommandDefinitions,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
 >(
-  game: GameDefinition<FacadeGameState, SetupInput, CommandDefinitions>,
+  game:
+    | GameDefinitionWithoutSetupInput<FacadeGameState, CommandDefinitions>
+    | GameDefinitionWithSetupInput<FacadeGameState, object, CommandDefinitions>,
   gameState: CanonicalGameState<FacadeGameState>,
 ): void {
   assertSchemaValue(game.canonicalGameStateSchema, gameState);
@@ -28,10 +33,11 @@ export function validateCanonicalGameState<
 
 export function validateRuntimeState<
   FacadeGameState extends BaseGameState,
-  SetupInput extends object | undefined,
-  CommandDefinitions,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
 >(
-  game: GameDefinition<FacadeGameState, SetupInput, CommandDefinitions>,
+  game:
+    | GameDefinitionWithoutSetupInput<FacadeGameState, CommandDefinitions>
+    | GameDefinitionWithSetupInput<FacadeGameState, object, CommandDefinitions>,
   runtimeState: RuntimeState,
 ): void {
   assertSchemaValue(game.runtimeStateSchema, runtimeState);
@@ -39,10 +45,11 @@ export function validateRuntimeState<
 
 export function validateCanonicalState<
   FacadeGameState extends BaseGameState,
-  SetupInput extends object | undefined,
-  CommandDefinitions,
+  CommandDefinitions extends CommandDefinitionShape<FacadeGameState>,
 >(
-  game: GameDefinition<FacadeGameState, SetupInput, CommandDefinitions>,
+  game:
+    | GameDefinitionWithoutSetupInput<FacadeGameState, CommandDefinitions>
+    | GameDefinitionWithSetupInput<FacadeGameState, object, CommandDefinitions>,
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
 ): void {
   validateCanonicalGameState(game, state.game);
