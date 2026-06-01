@@ -6,7 +6,7 @@ import type {
 } from "../game-definition";
 import type { CanonicalGameState } from "../state-facade/canonical";
 import type { GameState as BaseGameState } from "../state-facade/metadata";
-import type { CommandDefinitionShape } from "../types/command";
+import type { CommandDefinition } from "../types/command";
 import type { CanonicalState, RuntimeState } from "../types/state";
 
 export function assertSchemaValue(schema: TSchema, value: unknown): void {
@@ -21,7 +21,7 @@ export function assertSchemaValue(schema: TSchema, value: unknown): void {
 
 export function validateCanonicalGameState<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game:
     | GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>
@@ -33,7 +33,7 @@ export function validateCanonicalGameState<
 
 export function validateRuntimeState<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game:
     | GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>
@@ -45,7 +45,7 @@ export function validateRuntimeState<
 
 export function validateCanonicalState<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game:
     | GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>

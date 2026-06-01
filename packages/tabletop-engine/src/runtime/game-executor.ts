@@ -16,7 +16,7 @@ import {
 import type {
   Command,
   RuntimeCommandDefinition,
-  CommandDefinitionShape,
+  CommandDefinition,
   CommandDiscoveryResultFor,
   Discovery,
   DiscoveryStepOption,
@@ -48,7 +48,7 @@ import {
 
 type AnyGameDefinition<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 > =
   | GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>
   | GameDefinitionWithSetupInput<FacadeGameState, object, TCommandDefinition>;
@@ -81,7 +81,7 @@ export interface GameExecutor<
 
 function createCommandGameView<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
@@ -103,7 +103,7 @@ type CreateInitialStateFn<
 
 function createInitialRuntimeState<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
   rngSeed: string | number,
@@ -130,7 +130,7 @@ function createInitialRuntimeState<
 
 function initializeGameState<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
   input: object | undefined,
@@ -204,7 +204,7 @@ function initializeGameState<
 
 function getCurrentStageDefinition<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
@@ -222,7 +222,7 @@ function resolveStageNextStages<GameState extends BaseGameState>(
 
 function initializeStageMachine<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
@@ -286,7 +286,7 @@ function initializeStageMachine<
 
 function advanceStageMachine<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
@@ -358,7 +358,7 @@ function advanceStageMachine<
 export function createGameExecutor<
   FacadeGameState extends BaseGameState,
   SetupInput extends object,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: GameDefinitionWithSetupInput<
     FacadeGameState,
@@ -373,7 +373,7 @@ export function createGameExecutor<
 
 export function createGameExecutor<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>,
 ): GameExecutor<
@@ -384,7 +384,7 @@ export function createGameExecutor<
 
 export function createGameExecutor<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(game: AnyGameDefinition<FacadeGameState, TCommandDefinition>) {
   if (game.setupInputSchema) {
     return createGameExecutorWithSetup(game);
@@ -397,7 +397,7 @@ export function createGameExecutor<
 // `createGameExecutor` preserve the caller's concrete SetupInput type.
 function createGameExecutorWithSetup<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: GameDefinitionWithSetupInput<
     FacadeGameState,
@@ -419,7 +419,7 @@ function createGameExecutorWithSetup<
 
 function createGameExecutorWithoutSetup<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>,
 ): GameExecutor<
@@ -437,7 +437,7 @@ function createGameExecutorWithoutSetup<
 
 function createExecutorMethods<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,
 ): Omit<
@@ -947,7 +947,7 @@ function isActorAllowedInCurrentStage(
 
 function executeCommandAgainstState<
   FacadeGameState extends BaseGameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 >(
   state: CanonicalState<CanonicalGameState<FacadeGameState>>,
   game: AnyGameDefinition<FacadeGameState, TCommandDefinition>,

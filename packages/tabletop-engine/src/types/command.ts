@@ -339,14 +339,9 @@ export type DefinedCommand<
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
 > = CommandDefinitionBrand &
-  CommandDefinitionShape<
-    FacadeGameState,
-    TCommandInput,
-    TDiscoveryInput,
-    TSteps
-  >;
+  CommandDefinition<FacadeGameState, TCommandInput, TDiscoveryInput, TSteps>;
 
-export type CommandDefinitionShape<
+export type CommandDefinition<
   FacadeGameState extends BaseGameState,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = TCommandInput,

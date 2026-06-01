@@ -1,6 +1,6 @@
 import type {
   RuntimeCommandDefinition,
-  CommandDefinitionShape,
+  CommandDefinition,
 } from "./types/command";
 import type {
   CommandDefinitionsFromStageDefinition,
@@ -48,7 +48,7 @@ export interface GameSetupContext<
 
 interface BaseGameDefinition<
   FacadeGameState extends GameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 > {
   name: string;
   commands: CommandDefinitionMap<FacadeGameState>;
@@ -63,7 +63,7 @@ interface BaseGameDefinition<
 
 export interface GameDefinitionWithoutSetupInput<
   FacadeGameState extends GameState,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 > extends BaseGameDefinition<FacadeGameState, TCommandDefinition> {
   setupInputSchema?: undefined;
   setup?: (context: GameSetupContext<FacadeGameState, undefined>) => void;
@@ -72,7 +72,7 @@ export interface GameDefinitionWithoutSetupInput<
 export interface GameDefinitionWithSetupInput<
   FacadeGameState extends GameState,
   SetupInput extends object,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 > extends BaseGameDefinition<FacadeGameState, TCommandDefinition> {
   setupInputSchema: ObjectFieldType<Record<string, FieldType>>;
   setup?: (context: GameSetupContext<FacadeGameState, SetupInput>) => void;
@@ -81,7 +81,7 @@ export interface GameDefinitionWithSetupInput<
 export type GameDefinition<
   FacadeGameState extends GameState,
   SetupInput extends object | undefined,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState>,
+  TCommandDefinition extends CommandDefinition<FacadeGameState>,
 > = [SetupInput] extends [undefined]
   ? GameDefinitionWithoutSetupInput<FacadeGameState, TCommandDefinition>
   : GameDefinitionWithSetupInput<
@@ -104,7 +104,7 @@ interface GameDefinitionBuilderState<
 export class GameDefinitionBuilder<
   FacadeGameState extends GameState = GameState,
   SetupInput extends object | undefined = undefined,
-  TCommandDefinition extends CommandDefinitionShape<FacadeGameState> = never,
+  TCommandDefinition extends CommandDefinition<FacadeGameState> = never,
 > {
   private readonly config: GameDefinitionBuilderState<
     FacadeGameState,
