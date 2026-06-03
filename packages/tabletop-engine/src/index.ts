@@ -1,6 +1,7 @@
 export {
   GameDefinitionBuilder,
-  GameDefinitionBuilderWithSetup,
+  GameDefinitionBuilderWithoutSetupInput,
+  GameDefinitionBuilderWithSetupInput,
 } from "./game-definition";
 export { createCommandFactory } from "./command-factory";
 export { createStageFactory } from "./stage-factory";
