@@ -1,4 +1,7 @@
-export { GameDefinitionBuilder } from "./game-definition";
+export {
+  GameDefinitionBuilder,
+  GameDefinitionBuilderWithSetup,
+} from "./game-definition";
 export { createCommandFactory } from "./command-factory";
 export { createStageFactory } from "./stage-factory";
 export { createGameExecutor } from "./runtime/game-executor";
