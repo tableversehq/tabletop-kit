@@ -1,6 +1,5 @@
 import type { FieldType, ObjectFieldType } from "../schema";
 import type { CanonicalGameState } from "../state-facade/canonical";
-import type { GameState as BaseGameState } from "../state-facade/metadata";
 import type { GameEvent } from "./event";
 import type { RNGApi } from "./rng";
 import type { ValidationOutcome } from "./result";
@@ -44,7 +43,7 @@ export type CommandBuilderBaseConfig<
 };
 
 type CommandLifecycleMethods<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TInput extends CommandData,
 > = {
   isAvailable?(context: CommandAvailabilityContext<FacadeGameState>): boolean;
@@ -86,7 +85,7 @@ export type DiscoveryStepResult<
   | DiscoveryStepComplete<TCommandInput>;
 
 export interface DiscoveryStepContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TDiscovery extends DiscoveryData = DiscoveryData,
 > extends CommandAvailabilityContext<FacadeGameState> {
   discovery: Discovery<TDiscovery>;
@@ -94,7 +93,7 @@ export interface DiscoveryStepContext<
 }
 
 export interface DiscoveryStepDefinition<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TStepId extends string = string,
   TInput extends DiscoveryData = DiscoveryData,
   TOutput extends DiscoveryData = DiscoveryData,
@@ -113,7 +112,7 @@ export interface DiscoveryStepDefinition<
 }
 
 export type DiscoveryStepFactory<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
@@ -122,7 +121,7 @@ export type DiscoveryStepFactory<
 ) => DiscoveryStepBuilder<FacadeGameState, TCommandInput, TSteps, TStepId>;
 
 export type DiscoveryStepBuilder<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
@@ -146,7 +145,7 @@ export type DiscoveryStepBuilder<
 };
 
 export type DiscoveryStepInitialBuilder<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
@@ -165,7 +164,7 @@ export type DiscoveryStepInitialBuilder<
 };
 
 export type DiscoveryStepInputBuilder<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
@@ -224,7 +223,7 @@ type ValidatedDiscoveryStepResult<
   | DiscoveryStepComplete<TCommandInput>;
 
 export type DiscoveryStepResolveFn<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[],
   TInput extends DiscoveryData,
@@ -234,7 +233,7 @@ export type DiscoveryStepResolveFn<
 ) => ValidatedDiscoveryStepResult<TSteps, TOutput, TCommandInput> | null;
 
 export type DiscoveryStepReadyBuilder<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
@@ -270,7 +269,7 @@ export type DiscoveryStepReadyBuilder<
 };
 
 export type DiscoveryStepResolvedBuilder<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
     readonly AnyDiscoveryStepDefinition[],
@@ -311,7 +310,7 @@ export interface DiscoveryDefinition<
 }
 
 export type DiscoverableCommandDefinition<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = DiscoveryData,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
@@ -324,7 +323,7 @@ export type DiscoverableCommandDefinition<
 } & CommandLifecycleMethods<FacadeGameState, TCommandInput>;
 
 export type NonDiscoverableCommandDefinition<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData = CommandData,
 > = {
   commandId: string;
@@ -333,7 +332,7 @@ export type NonDiscoverableCommandDefinition<
 } & CommandLifecycleMethods<FacadeGameState, TCommandInput>;
 
 export type DefinedCommand<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = TCommandInput,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
@@ -342,7 +341,7 @@ export type DefinedCommand<
   CommandDefinition<FacadeGameState, TCommandInput, TDiscoveryInput, TSteps>;
 
 export type CommandDefinition<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = TCommandInput,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
@@ -356,7 +355,7 @@ export type CommandDefinition<
     >
   | NonDiscoverableCommandDefinition<FacadeGameState, TCommandInput>;
 
-export type RuntimeCommandDefinition<FacadeGameState extends BaseGameState> = {
+export type RuntimeCommandDefinition<FacadeGameState extends object> = {
   commandId: string;
   commandSchema: CommandSchema<Record<string, unknown>>;
   discovery?: DiscoveryDefinition;
@@ -368,7 +367,7 @@ export type RuntimeCommandDefinition<FacadeGameState extends BaseGameState> = {
 };
 
 export type NonDiscoverableCommandAccumulator<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
 > = Pick<
   NonDiscoverableCommandDefinition<FacadeGameState, TCommandInput>,
@@ -382,7 +381,7 @@ export type NonDiscoverableCommandAccumulator<
   >;
 
 export type DiscoverableCommandAccumulator<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = TCommandInput,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
@@ -409,7 +408,7 @@ export type DiscoverableCommandAccumulator<
   >;
 
 export type CommandBuilderAccumulator<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = TCommandInput,
   THasDiscovery extends boolean = false,
@@ -447,7 +446,7 @@ export type DiscoveryInitialInput<
     : never;
 
 type BuildBuilderMethod<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData,
   TDiscoveryInput extends DiscoveryData,
   THasDiscovery extends boolean,
@@ -468,7 +467,7 @@ type BuildBuilderMethod<
   : NoBuilderMethod;
 
 export type CommandBuilder<
-  FacadeGameState extends BaseGameState = BaseGameState,
+  FacadeGameState extends object = object,
   TCommandInput extends CommandData = CommandData,
   TDiscoveryInput extends DiscoveryData = never,
   TSteps extends readonly AnyDiscoveryStepDefinition[] =
@@ -575,17 +574,18 @@ export type CommandBuilder<
   >;
 
 export interface InternalValidationContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommand extends Command = Command,
+  TCanonicalGameState extends object = CanonicalGameState<FacadeGameState>,
 > {
-  state: CanonicalState<CanonicalGameState<FacadeGameState>>;
+  state: CanonicalState<TCanonicalGameState>;
   game: Readonly<FacadeGameState>;
   runtime: Readonly<RuntimeState>;
   command: TCommand;
 }
 
 export type ValidationContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommand extends Command = Command,
 > = {
   game: Readonly<FacadeGameState>;
@@ -594,33 +594,37 @@ export type ValidationContext<
 };
 
 export interface InternalCommandAvailabilityContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
+  TCanonicalGameState extends object = CanonicalGameState<FacadeGameState>,
 > {
-  state: CanonicalState<CanonicalGameState<FacadeGameState>>;
+  state: CanonicalState<TCanonicalGameState>;
   game: Readonly<FacadeGameState>;
   runtime: Readonly<RuntimeState>;
   commandType: string;
   actorId: string;
 }
 
-export type CommandAvailabilityContext<FacadeGameState extends BaseGameState> =
-  {
-    game: Readonly<FacadeGameState>;
-    runtime: Readonly<RuntimeState>;
-    commandType: string;
-    actorId: string;
-  };
+export type CommandAvailabilityContext<FacadeGameState extends object> = {
+  game: Readonly<FacadeGameState>;
+  runtime: Readonly<RuntimeState>;
+  commandType: string;
+  actorId: string;
+};
 
 export interface InternalDiscoveryContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TDiscovery extends DiscoveryData = DiscoveryData,
-> extends InternalCommandAvailabilityContext<FacadeGameState> {
+  TCanonicalGameState extends object = CanonicalGameState<FacadeGameState>,
+> extends InternalCommandAvailabilityContext<
+  FacadeGameState,
+  TCanonicalGameState
+> {
   discovery: Discovery<TDiscovery>;
   input: TDiscovery;
 }
 
 export type DiscoveryContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TDiscovery extends DiscoveryData = DiscoveryData,
 > = CommandAvailabilityContext<FacadeGameState> & {
   discovery: Discovery<TDiscovery>;
@@ -686,9 +690,14 @@ export type CommandDiscoveryResultFor<TDefinition> = TDefinition extends {
   : never;
 
 export interface InternalExecuteContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommand extends Command = Command,
-> extends InternalValidationContext<FacadeGameState, TCommand> {
+  TCanonicalGameState extends object = CanonicalGameState<FacadeGameState>,
+> extends InternalValidationContext<
+  FacadeGameState,
+  TCommand,
+  TCanonicalGameState
+> {
   game: FacadeGameState;
   runtime: Readonly<RuntimeState>;
   rng: RNGApi;
@@ -696,7 +705,7 @@ export interface InternalExecuteContext<
 }
 
 export type ExecuteContext<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommand extends Command = Command,
 > = {
   game: FacadeGameState;
@@ -707,7 +716,7 @@ export type ExecuteContext<
 };
 
 export interface InternalCommandDefinition<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends CommandData = CommandData,
 > {
   commandId: string;

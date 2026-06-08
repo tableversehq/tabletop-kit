@@ -22,9 +22,8 @@ import type {
 } from "./types/command";
 import { commandDefinitionBrand as brand } from "./types/command";
 import { assertSerializableSchema } from "./schema";
-import type { GameState as BaseGameState } from "./state-facade/metadata";
 
-export interface CommandFactory<FacadeGameState extends BaseGameState> {
+export interface CommandFactory<FacadeGameState extends object> {
   <TCommandInput extends Record<string, unknown>>(
     config: CommandBuilderBaseConfig<TCommandInput>,
   ): CommandBuilder<FacadeGameState, TCommandInput>;
@@ -39,11 +38,11 @@ type DiscoveryStepAccumulator = {
 };
 
 function createDiscoveryStepBuilder<
-  FacadeGameState extends BaseGameState,
+  FacadeGameState extends object,
   TCommandInput extends Record<string, unknown>,
   TStepId extends string,
-  TSteps extends readonly DiscoveryStepDefinition<BaseGameState>[] =
-    readonly DiscoveryStepDefinition<BaseGameState>[],
+  TSteps extends readonly DiscoveryStepDefinition<object>[] =
+    readonly DiscoveryStepDefinition<object>[],
 >(
   stepId: TStepId,
 ): DiscoveryStepBuilder<FacadeGameState, TCommandInput, TSteps, TStepId> {
@@ -194,7 +193,7 @@ function createDiscoveryStepBuilder<
   return createStepBuilder();
 }
 
-export function createCommandFactory<FacadeGameState extends BaseGameState>() {
+export function createCommandFactory<FacadeGameState extends object>() {
   function brandCommandDefinition<
     TCommandInput extends Record<string, unknown>,
     TDiscoveryInput extends Record<string, unknown> = TCommandInput,
@@ -296,8 +295,8 @@ export function createCommandFactory<FacadeGameState extends BaseGameState>() {
     return {
       discoverable<
         const TNextSteps extends readonly [
-          DiscoveryStepDefinition<BaseGameState>,
-          ...DiscoveryStepDefinition<BaseGameState>[],
+          DiscoveryStepDefinition<object>,
+          ...DiscoveryStepDefinition<object>[],
         ],
       >(
         configure: (

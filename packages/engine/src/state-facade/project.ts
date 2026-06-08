@@ -1,13 +1,13 @@
 import type { CompiledStateFacadeDefinition } from "./compile";
 import type { FieldType } from "../schema";
 import type {
-  FieldVisibilityConfig,
-  GameStateClass,
-  VisibilityMode,
-} from "./metadata";
+  FieldVisibilityEntry,
+  GameState,
+  HiddenValue,
+} from "../state/game-state";
 import { hydrateStateNode } from "./hydrate";
 import type { CanonicalState } from "../types/state";
-import type { HiddenValue, Viewer, VisibleState } from "../types/visibility";
+import type { Viewer, VisibleState } from "../types/visibility";
 
 export function getView<TGameState extends object>(
   state: CanonicalState<TGameState>,
@@ -34,7 +34,7 @@ export function getView<TGameState extends object>(
 
 function projectStateNode(
   compiled: CompiledStateFacadeDefinition,
-  target: GameStateClass,
+  state: GameState,
   backing: unknown,
   viewer: Viewer,
   ownerPlayerId?: string,
@@ -43,21 +43,23 @@ function projectStateNode(
     return {};
   }
 
-  const definition = compiled.states[target.name];
+  const definition = compiled.states.get(state);
 
   if (!definition) {
-    throw new Error(`compiled_state_not_found:${target.name || "anonymous"}`);
+    throw new Error(
+      `compiled_state_not_found:${state.stateClass.name || "anonymous"}`,
+    );
   }
 
   const nextOwnerPlayerId = definition.ownedByField
-    ? readOwnerPlayerId(target, backing, definition.ownedByField)
+    ? readOwnerPlayerId(state, backing, definition.ownedByField)
     : ownerPlayerId;
   const projected: Record<string, unknown> = {};
   let readonlyFacade: object | undefined;
 
   function getReadonlyFacade(): object {
     if (!readonlyFacade) {
-      readonlyFacade = hydrateStateNode(compiled, target, backing as object, {
+      readonlyFacade = hydrateStateNode(compiled, state, backing as object, {
         readonly: true,
       });
     }
@@ -65,13 +67,16 @@ function projectStateNode(
     return readonlyFacade;
   }
 
-  for (const [fieldName, fieldType] of Object.entries(definition.fields)) {
-    const visibility = definition.fieldVisibility[fieldName]?.mode;
+  for (const [fieldName, fieldType] of Object.entries(definition.model)) {
+    const visibility = getFieldVisibility(definition.visibility, fieldName);
     const fieldValue = (backing as Record<string, unknown>)[fieldName];
 
-    if (visibility && shouldHideField(visibility, viewer, nextOwnerPlayerId)) {
+    if (
+      visibility &&
+      shouldHideField(visibility.mode, viewer, nextOwnerPlayerId)
+    ) {
       projected[fieldName] = createHiddenValue(
-        definition.fieldVisibility[fieldName],
+        visibility,
         fieldValue,
         getReadonlyFacade,
       );
@@ -110,7 +115,7 @@ function projectFieldValue(
   if (fieldType.kind === "state") {
     return projectStateNode(
       compiled,
-      fieldType.target(),
+      fieldType.target,
       value,
       viewer,
       ownerPlayerId,
@@ -178,8 +183,18 @@ function projectFieldValue(
   return value;
 }
 
+function getFieldVisibility(
+  visibility: readonly { kind: string; fieldName: string }[],
+  fieldName: string,
+): FieldVisibilityEntry | undefined {
+  return visibility.find(
+    (entry): entry is FieldVisibilityEntry =>
+      entry.kind === "field" && entry.fieldName === fieldName,
+  );
+}
+
 function shouldHideField(
-  visibility: VisibilityMode,
+  visibility: "hidden" | "visibleToSelf",
   viewer: Viewer,
   ownerPlayerId?: string,
 ): boolean {
@@ -191,7 +206,7 @@ function shouldHideField(
 }
 
 function readOwnerPlayerId(
-  target: GameStateClass,
+  state: GameState,
   backing: unknown,
   ownedByField: string,
 ): string | undefined {
@@ -206,16 +221,16 @@ function readOwnerPlayerId(
 
   throw new Error(
     `owned_by_field_requires_non_empty_string_value:${
-      target.name || "anonymous"
+      state.stateClass.name || "anonymous"
     }:${ownedByField}`,
   );
 }
 
 function createHiddenValue(
-  visibility: FieldVisibilityConfig | undefined,
+  visibility: FieldVisibilityEntry | undefined,
   value: unknown,
   getReadonlyFacade: () => object,
-): HiddenValue {
+): HiddenValue | HiddenValue<unknown> {
   const summaryValue = visibility?.derive?.(value, getReadonlyFacade());
 
   if (summaryValue === undefined) {

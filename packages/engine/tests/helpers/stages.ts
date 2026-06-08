@@ -4,15 +4,14 @@ import type {
   AutomaticStageDefinition,
   SingleActivePlayerStageDefinition,
 } from "../../src/types/progression";
-import type { GameState as BaseGameState } from "../../src/state-facade/metadata";
 
-export function createTerminalStage<GameState extends BaseGameState>(
+export function createTerminalStage<GameState extends object>(
   id = "gameEnd",
 ): AutomaticStageDefinition<GameState> {
   return createStageFactory<GameState>()(id).automatic().build();
 }
 
-export function createSelfLoopingTurnStage<GameState extends BaseGameState>(
+export function createSelfLoopingTurnStage<GameState extends object>(
   commands: readonly DefinedCommand<GameState>[],
   options?: {
     id?: string;

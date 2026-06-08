@@ -8,6 +8,7 @@ export { createStageFactory } from "./stage-factory";
 export { createGameExecutor } from "./runtime/game-executor";
 export { assertSchemaValue } from "./runtime/validation";
 export { t } from "./schema";
+export { defineGameState } from "./state/game-state";
 export {
   configureVisibility,
   field,
@@ -32,6 +33,14 @@ export type {
 } from "./game-definition";
 export type { GameExecutor } from "./runtime/game-executor";
 export type {
+  CanonicalStateOf,
+  GameState as BuiltGameState,
+  GameStateDefinition,
+  StateClass,
+  StateClassOf,
+  ViewOf,
+} from "./state/game-state";
+export type {
   ArraySchemaStatic,
   ArrayFieldType,
   FieldType,
@@ -52,6 +61,7 @@ export type {
   AnyDiscoveryStepDefinition,
   CommandSchema,
   CommandDiscoveryResult,
+  CommandDiscoveryResultFor,
   Command,
   Discovery,
   DiscoveryDefinition,
