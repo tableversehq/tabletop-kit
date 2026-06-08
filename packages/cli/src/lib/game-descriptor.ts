@@ -3,6 +3,7 @@ import type {
   CommandSchema,
   FieldType,
   AnyGameDefinition,
+  GameState,
   SerializableFieldType,
 } from "@tabletop-kit/engine";
 
@@ -69,23 +70,23 @@ export function toJsonSchema(schema: unknown): Record<string, unknown> {
 }
 
 interface CompiledStateFacadeDefinition {
-  root: {
-    name: string;
-  };
-  states: Record<string, CompiledStateDefinition>;
+  root: GameState;
+  states: Map<GameState, CompiledStateDefinition>;
 }
 
 interface CompiledStateDefinition {
-  fields: Record<string, FieldType>;
-  fieldVisibility: Record<string, FieldVisibilityConfig>;
+  model: Record<string, FieldType>;
+  visibility: readonly FieldVisibilityConfig[];
 }
 
 interface FieldVisibilityConfig {
+  kind: "field";
+  fieldName: string;
   mode: VisibilityMode;
   schema?: SerializableFieldType;
 }
 
-type VisibilityMode = "hidden" | "visible_to_self";
+type VisibilityMode = "hidden" | "visibleToSelf";
 
 export function describeGameForGeneration(
   game: AnyGameDefinition,
@@ -203,7 +204,7 @@ function createVisibleStateSchema(
 ): TSchema {
   return Type.Object({
     game: compiled
-      ? inferStateViewSchema(compiled, compiled.root.name)
+      ? inferStateViewSchema(compiled, compiled.root)
       : Type.Unknown(),
     progression: progressionStateSchema,
   });
@@ -211,26 +212,28 @@ function createVisibleStateSchema(
 
 function inferStateViewSchema(
   compiled: CompiledStateFacadeDefinition,
-  stateName: string,
+  stateDefinition: GameState,
 ): TSchema {
-  const state = compiled.states[stateName];
+  const state = compiled.states.get(stateDefinition);
 
   if (!state) {
-    throw new Error(`compiled_state_not_found:${stateName}`);
+    throw new Error(
+      `compiled_state_not_found:${stateDefinition.stateClass.name || "anonymous"}`,
+    );
   }
 
   return Type.Object(
     Object.fromEntries(
-      Object.entries(state.fields).map(([fieldName, fieldType]) => {
-        const visibility = state.fieldVisibility[fieldName]?.mode;
+      Object.entries(state.model).map(([fieldName, fieldType]) => {
+        const fieldVisibility = findFieldVisibility(state, fieldName);
 
         return [
           fieldName,
           inferFieldViewSchema(
             compiled,
             fieldType,
-            state.fieldVisibility[fieldName],
-            visibility,
+            fieldVisibility,
+            fieldVisibility?.mode,
           ),
         ];
       }),
@@ -251,7 +254,7 @@ function inferFieldViewSchema(
     return hiddenSchema;
   }
 
-  if (visibility === "visible_to_self") {
+  if (visibility === "visibleToSelf") {
     return Type.Union([visibleSchema, hiddenSchema]);
   }
 
@@ -263,7 +266,7 @@ function inferVisibleFieldSchema(
   fieldType: FieldType,
 ): TSchema {
   if (fieldType.kind === "state") {
-    return inferStateViewSchema(compiled, fieldType.target().name);
+    return inferStateViewSchema(compiled, fieldType.target);
   }
 
   if (fieldType.kind === "array") {
@@ -293,6 +296,16 @@ function inferVisibleFieldSchema(
   }
 
   return toTypeBoxSchema(fieldType);
+}
+
+function findFieldVisibility(
+  state: CompiledStateDefinition,
+  fieldName: string,
+): FieldVisibilityConfig | undefined {
+  return state.visibility.find(
+    (entry): entry is FieldVisibilityConfig =>
+      entry.kind === "field" && entry.fieldName === fieldName,
+  );
 }
 
 function inferRecordKeySchema(fieldType: FieldType): TSchema {

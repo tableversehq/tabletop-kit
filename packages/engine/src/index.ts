@@ -10,12 +10,6 @@ export { assertSchemaValue } from "./runtime/validation";
 export { t } from "./schema";
 export { defineGameState } from "./state/game-state";
 export {
-  configureVisibility,
-  field,
-  GameState,
-  getStateMetadata,
-} from "./state-facade/metadata";
-export {
   appendReplayStep,
   createReplayRecord,
   replayRecord,
@@ -34,7 +28,7 @@ export type {
 export type { GameExecutor } from "./runtime/game-executor";
 export type {
   CanonicalStateOf,
-  GameState as BuiltGameState,
+  GameState,
   GameStateDefinition,
   StateClass,
   StateClassOf,

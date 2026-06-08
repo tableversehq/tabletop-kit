@@ -54,33 +54,33 @@ export type StateVisibilityEntry =
   | FieldVisibilityEntry<string, "hidden" | "visibleToSelf", any, any, any>;
 
 export interface GameStateDefinition<
-  TModel extends StateModel,
+  TCanonical extends object,
   TStateClass extends object,
-  TView extends object = DefaultView<TModel>,
+  TView extends object,
 > {
   readonly kind: "gameState";
-  readonly model: TModel;
+  readonly model: StateModel;
   readonly stateClass: StateClass<TStateClass>;
   readonly visibility: readonly StateVisibilityEntry[];
-  readonly __canonical?: CanonicalStateOfModel<TModel>;
+  readonly __canonical?: TCanonical;
   readonly __stateClass?: TStateClass;
   readonly __view?: TView;
 }
 
-export type GameState = GameStateDefinition<StateModel, object, object>;
+export type GameState = GameStateDefinition<object, object, object>;
 
 export type CanonicalStateOf<TState> =
-  TState extends GameStateDefinition<infer TModel, object, object>
-    ? CanonicalStateOfModel<TModel>
+  TState extends GameStateDefinition<infer TCanonical, object, object>
+    ? TCanonical
     : never;
 
 export type StateClassOf<TState> =
-  TState extends GameStateDefinition<StateModel, infer TStateClass, object>
+  TState extends GameStateDefinition<object, infer TStateClass, object>
     ? TStateClass
     : never;
 
 export type ViewOf<TState> =
-  TState extends GameStateDefinition<StateModel, object, infer TView>
+  TState extends GameStateDefinition<object, object, infer TView>
     ? TView
     : never;
 
@@ -220,7 +220,7 @@ export class GameStateVisibilityBuilder<
   }
 
   build(): GameStateDefinition<
-    TModel,
+    CanonicalStateOfModel<TModel>,
     TStateClass,
     ApplyVisibility<TModel, TEntries>
   > {
@@ -232,7 +232,7 @@ export class GameStateVisibilityBuilder<
       stateClass: this.stateClassConstructor,
       visibility: this.visibilityEntries,
     } as GameStateDefinition<
-      TModel,
+      CanonicalStateOfModel<TModel>,
       TStateClass,
       ApplyVisibility<TModel, TEntries>
     >;
