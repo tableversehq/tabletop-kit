@@ -188,9 +188,8 @@ export class GameStateModelBuilder {
 export class GameStateClassBuilder<TModel extends StateModel> {
   constructor(private readonly stateModel: TModel) {}
 
-  stateClass<TStateClass extends object>(
-    stateClass: StateClass<TStateClass> &
-      (TStateClass extends CanonicalStateOfModel<TModel> ? unknown : never),
+  stateClass<TStateClass extends CanonicalStateOfModel<TModel>>(
+    stateClass: StateClass<TStateClass>,
   ): GameStateVisibilityBuilder<TModel, TStateClass, readonly []> {
     return new GameStateVisibilityBuilder(this.stateModel, stateClass, []);
   }
