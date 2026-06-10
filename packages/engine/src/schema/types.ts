@@ -5,7 +5,10 @@ import type {
   TSchema,
   TString,
 } from "@sinclair/typebox";
-import type { CanonicalStateOf, GameState } from "../state/game-state";
+import type {
+  CanonicalStateOf,
+  AnyGameStateDefinition,
+} from "../state/game-state";
 
 export const fieldKind = Symbol("tabletop-engine.schema-field-kind");
 
@@ -24,7 +27,9 @@ export type BooleanFieldType = TBoolean & {
   kind: "boolean";
 };
 
-export interface NestedStateFieldType<TState extends GameState = GameState> {
+export interface NestedStateFieldType<
+  TState extends AnyGameStateDefinition = AnyGameStateDefinition,
+> {
   readonly [fieldKind]: "state";
   kind: "state";
   target: TState;

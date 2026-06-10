@@ -11,7 +11,7 @@ import type {
   RecordFieldType,
   StringFieldType,
 } from "./types";
-import type { GameState } from "../state/game-state";
+import type { AnyGameStateDefinition } from "../state/game-state";
 import { fieldKind } from "./types";
 
 export type {
@@ -130,7 +130,7 @@ export const t = {
     }) as unknown as OptionalFieldType<TItem>;
   },
 
-  state<TState extends GameState>(
+  state<TState extends AnyGameStateDefinition>(
     target: TState,
   ): NestedStateFieldType<TState> {
     return {

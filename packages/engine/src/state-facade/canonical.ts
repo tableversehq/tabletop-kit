@@ -1,9 +1,12 @@
 import { Value } from "@sinclair/typebox/value";
 import type { TSchema } from "@sinclair/typebox";
 import { t, type FieldType, type ObjectFieldType } from "../schema";
-import type { CanonicalStateOf, GameState } from "../state/game-state";
+import type {
+  CanonicalStateOf,
+  AnyGameStateDefinition,
+} from "../state/game-state";
 
-export type CanonicalGameState<TState> = TState extends GameState
+export type CanonicalGameState<TState> = TState extends AnyGameStateDefinition
   ? CanonicalStateOf<TState>
   : TState extends readonly (infer TItem)[]
     ? CanonicalGameState<TItem>[]
@@ -16,7 +19,7 @@ export type CanonicalGameState<TState> = TState extends GameState
       : TState;
 
 export function compileCanonicalGameStateSchema(
-  root: GameState,
+  root: AnyGameStateDefinition,
 ): ObjectFieldType<Record<string, FieldType>> {
   return t.object(
     Object.fromEntries(
@@ -28,16 +31,19 @@ export function compileCanonicalGameStateSchema(
   );
 }
 
-export function createDefaultCanonicalGameState<TState extends GameState>(
-  root: TState,
-): CanonicalStateOf<TState> {
+export function createDefaultCanonicalGameState<
+  TState extends AnyGameStateDefinition,
+>(root: TState): CanonicalStateOf<TState> {
   return createCanonicalStateObject(
     root,
     new root.stateClass(),
   ) as CanonicalStateOf<TState>;
 }
 
-function createCanonicalStateObject(state: GameState, source: object): object {
+function createCanonicalStateObject(
+  state: AnyGameStateDefinition,
+  source: object,
+): object {
   const stateName = state.stateClass.name || "anonymous";
 
   for (const fieldName of Object.keys(source)) {

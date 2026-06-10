@@ -39,7 +39,7 @@ import type { Viewer, VisibleState } from "../types/visibility";
 import { createRNGService } from "../rng/service";
 import type {
   CanonicalStateOf,
-  GameState,
+  AnyGameStateDefinition,
   StateClassOf,
   ViewOf,
 } from "../state/game-state";
@@ -52,7 +52,7 @@ import {
 } from "./validation";
 
 export interface GameExecutor<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   SetupInput extends object | undefined = undefined,
   TCommandDefinition = never,
 > {
@@ -81,7 +81,7 @@ export interface GameExecutor<
 }
 
 function createCommandGameView<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -98,14 +98,14 @@ function createCommandGameView<
 }
 
 type CreateInitialStateFn<
-  GameData extends object,
+  GameState extends object,
   SetupInput extends object | undefined,
 > = [SetupInput] extends [undefined]
-  ? (rngSeed: string | number) => CanonicalState<GameData>
-  : (input: SetupInput, rngSeed: string | number) => CanonicalState<GameData>;
+  ? (rngSeed: string | number) => CanonicalState<GameState>
+  : (input: SetupInput, rngSeed: string | number) => CanonicalState<GameState>;
 
 function createInitialRuntimeState<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -132,7 +132,7 @@ function createInitialRuntimeState<
 }
 
 function initializeGameState<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -217,7 +217,7 @@ function initializeGameState<
 }
 
 function getCurrentStageDefinition<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -235,7 +235,7 @@ function resolveStageNextStages<HydratedState extends object>(
 }
 
 function initializeStageMachine<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   state: CanonicalState<CanonicalStateOf<RootState>>,
@@ -299,7 +299,7 @@ function initializeStageMachine<
 }
 
 function advanceStageMachine<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   state: CanonicalState<CanonicalStateOf<RootState>>,
@@ -371,7 +371,7 @@ function advanceStageMachine<
 }
 
 export function createGameExecutor<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   SetupInput extends object,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
@@ -379,14 +379,14 @@ export function createGameExecutor<
 ): GameExecutor<RootState, SetupInput, TCommandDefinition>;
 
 export function createGameExecutor<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: GameDefinitionWithoutSetupInput<RootState, TCommandDefinition>,
 ): GameExecutor<RootState, undefined, TCommandDefinition>;
 
 export function createGameExecutor<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(game: AnyGameDefinition<RootState, TCommandDefinition>) {
   if (game.setupInputSchema) {
@@ -399,7 +399,7 @@ export function createGameExecutor<
 // Factories use `object` for SetupInput internally; the public overloads on
 // `createGameExecutor` preserve the caller's concrete SetupInput type.
 function createGameExecutorWithSetup<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: GameDefinitionWithSetupInput<RootState, object, TCommandDefinition>,
@@ -413,7 +413,7 @@ function createGameExecutorWithSetup<
 }
 
 function createGameExecutorWithoutSetup<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: GameDefinitionWithoutSetupInput<RootState, TCommandDefinition>,
@@ -427,7 +427,7 @@ function createGameExecutorWithoutSetup<
 }
 
 function createExecutorMethods<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -940,7 +940,7 @@ function isActorAllowedInCurrentStage(
 }
 
 function executeCommandAgainstState<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   state: CanonicalState<CanonicalStateOf<RootState>>,

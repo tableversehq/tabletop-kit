@@ -27,8 +27,8 @@ export type {
 } from "./game-definition";
 export type { GameExecutor } from "./runtime/game-executor";
 export type {
+  AnyGameStateDefinition,
   CanonicalStateOf,
-  GameState,
   GameStateDefinition,
   StateClass,
   StateClassOf,

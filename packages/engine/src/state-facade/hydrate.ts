@@ -3,9 +3,9 @@ import type {
   CompiledStateFacadeDefinition,
 } from "./compile";
 import type { FieldType } from "../schema";
-import type { GameState, StateClassOf } from "../state/game-state";
+import type { AnyGameStateDefinition, StateClassOf } from "../state/game-state";
 
-export function hydrateStateFacade<TState extends GameState>(
+export function hydrateStateFacade<TState extends AnyGameStateDefinition>(
   compiled: CompiledStateFacadeDefinition,
   backing: object,
   options?: {
@@ -26,7 +26,7 @@ export function hydrateStateFacade<TState extends GameState>(
   ) as StateClassOf<TState>;
 }
 
-export function hydrateStateNode<TState extends GameState>(
+export function hydrateStateNode<TState extends AnyGameStateDefinition>(
   compiled: CompiledStateFacadeDefinition,
   state: TState,
   backing: object,
@@ -50,7 +50,7 @@ export function hydrateStateNode<TState extends GameState>(
 
 function hydrateStateInstance(
   compiled: CompiledStateFacadeDefinition,
-  state: GameState,
+  state: AnyGameStateDefinition,
   backing: object,
   mutationContext: MutationContext,
 ): object {
@@ -322,7 +322,7 @@ function createObjectFacade(
 
 function getCompiledStateDefinition(
   compiled: CompiledStateFacadeDefinition,
-  state: GameState,
+  state: AnyGameStateDefinition,
 ): CompiledStateDefinition {
   const definition = compiled.states.get(state);
 

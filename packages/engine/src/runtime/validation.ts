@@ -3,7 +3,7 @@ import type { TSchema } from "@sinclair/typebox";
 import type { AnyGameDefinition } from "../game-definition";
 import type {
   CanonicalStateOf,
-  GameState,
+  AnyGameStateDefinition,
   StateClassOf,
 } from "../state/game-state";
 import type { CommandDefinition } from "../types/command";
@@ -20,7 +20,7 @@ export function assertSchemaValue(schema: TSchema, value: unknown): void {
 }
 
 export function validateCanonicalGameState<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -30,7 +30,7 @@ export function validateCanonicalGameState<
 }
 
 export function validateRuntimeState<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,
@@ -40,7 +40,7 @@ export function validateRuntimeState<
 }
 
 export function validateCanonicalState<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   game: AnyGameDefinition<RootState, TCommandDefinition>,

@@ -67,7 +67,11 @@ export interface GameStateDefinition<
   readonly __view?: TView;
 }
 
-export type GameState = GameStateDefinition<object, object, object>;
+export type AnyGameStateDefinition = GameStateDefinition<
+  object,
+  object,
+  object
+>;
 
 export type CanonicalStateOf<TState> =
   TState extends GameStateDefinition<infer TCanonical, object, object>

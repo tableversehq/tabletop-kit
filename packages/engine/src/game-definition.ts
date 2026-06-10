@@ -22,7 +22,7 @@ import { compileRuntimeStateSchema } from "./runtime/runtime-schema";
 import { assertSchemaValue } from "./runtime/validation";
 import type {
   CanonicalStateOf,
-  GameState,
+  AnyGameStateDefinition,
   StateClassOf,
 } from "./state/game-state";
 import type { FieldType, ObjectFieldType, ObjectSchemaStatic } from "./schema";
@@ -57,7 +57,7 @@ export interface GameSetupContextWithInput<
 }
 
 interface BaseGameDefinition<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 > {
   name: string;
@@ -74,7 +74,7 @@ interface BaseGameDefinition<
 }
 
 export interface GameDefinitionWithoutSetupInput<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 > extends BaseGameDefinition<RootState, TCommandDefinition> {
   setupInputSchema?: undefined;
@@ -84,7 +84,7 @@ export interface GameDefinitionWithoutSetupInput<
 }
 
 export interface GameDefinitionWithSetupInput<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   SetupInput extends object,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 > extends BaseGameDefinition<RootState, TCommandDefinition> {
@@ -95,7 +95,7 @@ export interface GameDefinitionWithSetupInput<
 }
 
 export type GameDefinition<
-  RootState extends GameState = GameState,
+  RootState extends AnyGameStateDefinition = AnyGameStateDefinition,
   SetupInput extends object | undefined = object | undefined,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>> =
     CommandDefinition<StateClassOf<RootState>>,
@@ -108,7 +108,7 @@ export type GameDefinition<
     >;
 
 export type AnyGameDefinition<
-  RootState extends GameState = GameState,
+  RootState extends AnyGameStateDefinition = AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>> =
     CommandDefinition<StateClassOf<RootState>>,
 > =
@@ -116,7 +116,7 @@ export type AnyGameDefinition<
   | GameDefinitionWithSetupInput<RootState, object, TCommandDefinition>;
 
 export class GameDefinitionBuilder<
-  RootState extends GameState = GameState,
+  RootState extends AnyGameStateDefinition = AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>> = never,
 > {
   private readonly name: string;
@@ -127,7 +127,7 @@ export class GameDefinitionBuilder<
     this.name = name;
   }
 
-  state<NextRootState extends GameState>(
+  state<NextRootState extends AnyGameStateDefinition>(
     rootState: NextRootState,
   ): GameDefinitionBuilder<NextRootState, never> {
     this.rootStateDefinition = rootState as unknown as RootState;
@@ -195,7 +195,7 @@ export class GameDefinitionBuilder<
 }
 
 export class GameDefinitionBuilderWithoutSetupInput<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>> = never,
 > {
   private readonly name: string;
@@ -221,7 +221,7 @@ export class GameDefinitionBuilderWithoutSetupInput<
     this.setupCallback = setup;
   }
 
-  state<NextRootState extends GameState>(
+  state<NextRootState extends AnyGameStateDefinition>(
     rootState: NextRootState,
   ): GameDefinitionBuilderWithoutSetupInput<NextRootState, never> {
     this.rootStateDefinition = rootState as unknown as RootState;
@@ -268,7 +268,7 @@ export class GameDefinitionBuilderWithoutSetupInput<
 }
 
 export class GameDefinitionBuilderWithSetupInput<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   SetupInput extends object,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>> = never,
 > {
@@ -301,7 +301,7 @@ export class GameDefinitionBuilderWithSetupInput<
     this.setupCallback = setup;
   }
 
-  state<NextRootState extends GameState>(
+  state<NextRootState extends AnyGameStateDefinition>(
     rootState: NextRootState,
   ): GameDefinitionBuilderWithSetupInput<NextRootState, SetupInput, never> {
     this.rootStateDefinition = rootState as unknown as RootState;
@@ -355,7 +355,7 @@ export class GameDefinitionBuilderWithSetupInput<
 }
 
 function assembleBaseDefinition<
-  RootState extends GameState,
+  RootState extends AnyGameStateDefinition,
   TCommandDefinition extends CommandDefinition<StateClassOf<RootState>>,
 >(
   name: string,

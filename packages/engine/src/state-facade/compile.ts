@@ -1,22 +1,25 @@
 import type { FieldType } from "../schema";
-import type { GameState, StateVisibilityEntry } from "../state/game-state";
+import type {
+  AnyGameStateDefinition,
+  StateVisibilityEntry,
+} from "../state/game-state";
 
 export interface CompiledStateDefinition {
-  state: GameState;
+  state: AnyGameStateDefinition;
   model: Record<string, FieldType>;
   visibility: readonly StateVisibilityEntry[];
   ownedByField?: string;
 }
 
 export interface CompiledStateFacadeDefinition {
-  root: GameState;
-  states: Map<GameState, CompiledStateDefinition>;
+  root: AnyGameStateDefinition;
+  states: Map<AnyGameStateDefinition, CompiledStateDefinition>;
 }
 
 export function compileStateFacadeDefinition(
-  root: GameState,
+  root: AnyGameStateDefinition,
 ): CompiledStateFacadeDefinition {
-  const states = new Map<GameState, CompiledStateDefinition>();
+  const states = new Map<AnyGameStateDefinition, CompiledStateDefinition>();
 
   visitState(root, states, false);
 
@@ -27,8 +30,8 @@ export function compileStateFacadeDefinition(
 }
 
 function visitState(
-  state: GameState,
-  states: Map<GameState, CompiledStateDefinition>,
+  state: AnyGameStateDefinition,
+  states: Map<AnyGameStateDefinition, CompiledStateDefinition>,
   hasOwningPlayerAncestor: boolean,
 ): void {
   if (states.has(state)) {
@@ -62,7 +65,7 @@ function visitState(
 
 function visitNestedFieldTargets(
   field: FieldType,
-  states: Map<GameState, CompiledStateDefinition>,
+  states: Map<AnyGameStateDefinition, CompiledStateDefinition>,
   hasOwningPlayerAncestor: boolean,
 ): void {
   if (field.kind === "state") {
@@ -92,7 +95,9 @@ function visitNestedFieldTargets(
   }
 }
 
-function validateAndReadOwnedByField(state: GameState): string | undefined {
+function validateAndReadOwnedByField(
+  state: AnyGameStateDefinition,
+): string | undefined {
   const ownedByEntries = state.visibility.filter(
     (entry) => entry.kind === "ownedBy",
   );
@@ -118,7 +123,7 @@ function validateAndReadOwnedByField(state: GameState): string | undefined {
   return ownedByField;
 }
 
-function validateVisibilityFields(state: GameState): void {
+function validateVisibilityFields(state: AnyGameStateDefinition): void {
   const configuredFields = new Set<string>();
 
   for (const entry of state.visibility) {
