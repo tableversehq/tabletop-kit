@@ -18,7 +18,10 @@ import {
   createDefaultCanonicalGameState,
 } from "./state-facade/canonical";
 import { compileVisibleStateSchema } from "./state-facade/view-schema";
-import { compileRuntimeStateSchema } from "./runtime/runtime-schema";
+import {
+  compileProgressionStateSchema,
+  compileRuntimeStateSchema,
+} from "./runtime/runtime-schema";
 import { assertSchemaValue } from "./runtime/validation";
 import type {
   CanonicalStateOf,
@@ -374,7 +377,11 @@ function assembleBaseDefinition<
   const commands = compileCommandMapFromStages(stages);
   const stateFacade = compileStateFacadeDefinition(rootState);
   const canonicalGameStateSchema = compileCanonicalGameStateSchema(rootState);
-  const visibleStateSchema = compileVisibleStateSchema(stateFacade);
+  const progressionStateSchema = compileProgressionStateSchema(stages);
+  const visibleStateSchema = compileVisibleStateSchema(
+    stateFacade,
+    progressionStateSchema,
+  );
   const runtimeStateSchema = compileRuntimeStateSchema(stages);
   const defaultCanonicalGameState = createDefaultCanonicalGameState(rootState);
   assertSchemaValue(canonicalGameStateSchema, defaultCanonicalGameState);

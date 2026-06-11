@@ -61,7 +61,7 @@ function createUnionSchema(schemas: TSchema[]): TSchema {
   return Type.Union(schemas);
 }
 
-export function compileRuntimeStateSchema(
+export function compileProgressionStateSchema(
   stages: Record<string, StageDefinition<object>>,
 ): TSchema {
   const stageDefinitions = Object.values(stages);
@@ -76,10 +76,16 @@ export function compileRuntimeStateSchema(
   ]);
 
   return Type.Object({
-    progression: Type.Object({
-      currentStage: currentStageSchema,
-      lastActingStage: lastActingStageSchema,
-    }),
+    currentStage: currentStageSchema,
+    lastActingStage: lastActingStageSchema,
+  });
+}
+
+export function compileRuntimeStateSchema(
+  stages: Record<string, StageDefinition<object>>,
+): TSchema {
+  return Type.Object({
+    progression: compileProgressionStateSchema(stages),
     rng: Type.Object({
       seed: seedSchema,
       cursor: Type.Number(),

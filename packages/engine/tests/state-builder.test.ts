@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  assertSchemaValue,
   createCommandFactory,
   createGameExecutor,
   createStageFactory,
@@ -185,6 +186,9 @@ test("executor executes commands and projects visible state", () => {
     __hidden: true,
     value: { count: 1 },
   });
+  expect(() =>
+    assertSchemaValue(game.visibleStateSchema, selfView),
+  ).not.toThrow();
 });
 
 test("setup input is validated and passed to setup", () => {

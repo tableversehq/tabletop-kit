@@ -8,10 +8,11 @@ import type {
 
 export function compileVisibleStateSchema(
   compiled: CompiledStateFacadeDefinition,
+  progressionSchema: TSchema,
 ): TSchema {
   return Type.Object({
     game: inferStateViewSchema(compiled, compiled.root),
-    progression: progressionStateSchema,
+    progression: progressionSchema,
   });
 }
 
@@ -137,19 +138,4 @@ function inferHiddenEnvelopeSchema(schema?: SerializableFieldType): TSchema {
 
 const hiddenEnvelopeSchema = Type.Object({
   __hidden: Type.Literal(true),
-});
-
-const progressionSegmentSchema = Type.Object({
-  id: Type.String(),
-  kind: Type.Optional(Type.String()),
-  parentId: Type.Optional(Type.String()),
-  childIds: Type.Array(Type.String()),
-  active: Type.Boolean(),
-  ownerId: Type.Optional(Type.String()),
-});
-
-const progressionStateSchema = Type.Object({
-  current: Type.Union([Type.String(), Type.Null()]),
-  rootId: Type.Union([Type.String(), Type.Null()]),
-  segments: Type.Record(Type.String(), progressionSegmentSchema),
 });
