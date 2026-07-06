@@ -26,7 +26,11 @@ The intended public package family is:
 - `@tableverse-kit/cli`
   local authoring tooling, installed with the `tvk` command
 - `@tableverse-kit/ui`
-  planned UI package for hooks and scaffolded components
+  thin React bindings (hooks + provider) over the framework-neutral client.
+  A React binding is optional: the client is renderer-agnostic and can be
+  consumed directly by canvas/WebGL/WASM frontends. The previously planned
+  shadcn-style styled/copy-in component kit is cancelled — see
+  `docs/design/2026-07-05-frontend-runtime-agnostic-client.md`.
 
 ## Platform Boundary
 
@@ -151,7 +155,8 @@ The following are intentionally not complete yet:
 - stack / queue resolution model
 - richer event-resolution model distinct from player-facing logs
 - persistence adapters
-- `@tableverse-kit/ui` package implementation
+- `@tableverse-kit/ui` React-bindings package implementation (thin hooks over
+  the framework-neutral client; no styled component kit)
 - private Tabletop Lab command handoff
 
 ## Guidance For Future Work
