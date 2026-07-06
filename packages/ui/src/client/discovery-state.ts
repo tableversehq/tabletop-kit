@@ -1,5 +1,9 @@
 import type { DiscoveryStepOption } from "@tableverse-kit/engine";
-import type { CommandPayload, TTKitClient, TTKitGame } from "./types.ts";
+import type {
+  CommandPayload,
+  TableverseClient,
+  TableverseGame,
+} from "./types.ts";
 
 export type DiscoveryStatus =
   | "idle"
@@ -8,12 +12,12 @@ export type DiscoveryStatus =
   | "executing"
   | "error";
 
-export type OpenResultOf<G extends TTKitGame> = Extract<
+export type OpenResultOf<G extends TableverseGame> = Extract<
   G["discovery"]["result"],
   { complete: false }
 >;
 
-export type CompleteResultOf<G extends TTKitGame> = Extract<
+export type CompleteResultOf<G extends TableverseGame> = Extract<
   G["discovery"]["result"],
   { complete: true }
 >;
@@ -24,14 +28,15 @@ export type CompleteResultOf<G extends TTKitGame> = Extract<
  * `nextInput`/`nextStep` even when TS can't fully resolve the
  * `Extract<...>` in a generic context.
  */
-export type PickOptionOf<G extends TTKitGame> = (OpenResultOf<G> extends {
+export type PickOptionOf<G extends TableverseGame> = (OpenResultOf<G> extends {
   options: ReadonlyArray<infer O>;
 }
   ? O
   : never) &
   DiscoveryStepOption;
 
-export type CommandInputOf<G extends TTKitGame> = CompleteResultOf<G>["input"];
+export type CommandInputOf<G extends TableverseGame> =
+  CompleteResultOf<G>["input"];
 
 /**
  * `open` carries a `step: string` and a `ReadonlyArray<PickOptionOf<G>>`
@@ -39,7 +44,7 @@ export type CommandInputOf<G extends TTKitGame> = CompleteResultOf<G>["input"];
  * intersecting so the `options` field is the per-G option type (not the
  * engine base) even in a generic-G context.
  */
-export type OpenSnapshotResult<G extends TTKitGame> = Omit<
+export type OpenSnapshotResult<G extends TableverseGame> = Omit<
   OpenResultOf<G>,
   "options"
 > & {
@@ -47,7 +52,7 @@ export type OpenSnapshotResult<G extends TTKitGame> = Omit<
   options: Array<PickOptionOf<G>>;
 };
 
-export interface DiscoveryStateSnapshot<G extends TTKitGame> {
+export interface DiscoveryStateSnapshot<G extends TableverseGame> {
   /** Command type id being discovered (e.g. "take_three_gems"). Null when idle. */
   readonly activeCommandType: string | null;
   /**
@@ -67,7 +72,9 @@ export interface DiscoveryStateSnapshot<G extends TTKitGame> {
   readonly error: string | null;
 }
 
-function createIdleSnapshot<G extends TTKitGame>(): DiscoveryStateSnapshot<G> {
+function createIdleSnapshot<
+  G extends TableverseGame,
+>(): DiscoveryStateSnapshot<G> {
   return {
     activeCommandType: null,
     open: null,
@@ -87,15 +94,15 @@ function createIdleSnapshot<G extends TTKitGame>(): DiscoveryStateSnapshot<G> {
  * React hook can plug it into useSyncExternalStore.
  *
  * `G` must be passed explicitly — the factory binds it to the bundle's
- * game shape; tests use `<TTKitGame>` for the structural-default case.
+ * game shape; tests use `<TableverseGame>` for the structural-default case.
  */
-export class DiscoveryState<G extends TTKitGame> {
+export class DiscoveryState<G extends TableverseGame> {
   private snapshot: DiscoveryStateSnapshot<G> = createIdleSnapshot<G>();
   private readonly listeners = new Set<() => void>();
   private flowId = 0;
 
   constructor(
-    private readonly client: Pick<TTKitClient<G>, "discover" | "execute">,
+    private readonly client: Pick<TableverseClient<G>, "discover" | "execute">,
   ) {}
 
   getSnapshot(): DiscoveryStateSnapshot<G> {
@@ -240,7 +247,7 @@ export class DiscoveryState<G extends TTKitGame> {
 // which fails to unify with OpenSnapshotResult<G> because of the
 // conditional-on-generic-indexed-access inside it. The predicate just
 // declares the narrowed type; the runtime check is the same.
-function isOpenResult<G extends TTKitGame>(
+function isOpenResult<G extends TableverseGame>(
   result: G["discovery"]["result"],
 ): result is OpenSnapshotResult<G> {
   return result.complete === false;

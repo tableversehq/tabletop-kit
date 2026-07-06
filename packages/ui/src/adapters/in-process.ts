@@ -4,7 +4,7 @@ import type {
   CanonicalStateOf,
   GameExecutor,
 } from "@tableverse-kit/engine";
-import type { TTKitClient, TTKitGame } from "../client/types.ts";
+import type { TableverseClient, TableverseGame } from "../client/types.ts";
 
 export interface CreateInProcessClientOptions<
   RootState extends AnyGameStateDefinition,
@@ -14,7 +14,7 @@ export interface CreateInProcessClientOptions<
 }
 
 /**
- * In-process implementation of TTKitClient. Wraps a GameExecutor; runs the
+ * In-process implementation of TableverseClient. Wraps a GameExecutor; runs the
  * engine in the same JavaScript context as the UI. All async methods resolve
  * synchronously through Promise.resolve, so single-player games never wait
  * on a network.
@@ -24,19 +24,19 @@ export interface CreateInProcessClientOptions<
  * a replay) and hands it in. The adapter owns the running-game phase: state
  * mutation, subscriber notification, event fan-out.
  *
- * `G` defaults to the unparameterized `TTKitGame` shape; pass `G`
+ * `G` defaults to the unparameterized `TableverseGame` shape; pass `G`
  * explicitly to get typed view/event/command shapes, or use the
  * `createGameHooks<G>()` factory to bind the type once across the app.
  * `GameState` and `SetupInput` are inferred from the `executor` argument.
  */
 export function createInProcessClient<
-  G extends TTKitGame,
+  G extends TableverseGame,
   RootState extends AnyGameStateDefinition,
   SetupInput extends object | undefined = undefined,
 >(
   executor: GameExecutor<RootState, SetupInput>,
   options: CreateInProcessClientOptions<RootState>,
-): TTKitClient<G> {
+): TableverseClient<G> {
   let state = options.initialState;
   let version = 0;
   let currentViewerId = options.viewerId;
@@ -162,4 +162,4 @@ export function createInProcessClient<
  * Convenience: shape the executor type so callers don't have to fight
  * generics. The runtime cost is zero; this is only a type assertion helper.
  */
-export type InProcessClient<G extends TTKitGame> = TTKitClient<G>;
+export type InProcessClient<G extends TableverseGame> = TableverseClient<G>;

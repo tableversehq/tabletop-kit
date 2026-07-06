@@ -14,14 +14,14 @@ import {
   type OpenSnapshotResult,
   type PickOptionOf,
 } from "./discovery-state.ts";
-import type { TTKitClient, TTKitGame } from "./types.ts";
+import type { TableverseClient, TableverseGame } from "./types.ts";
 
-export interface TTKitProviderProps<G extends TTKitGame> {
-  client: TTKitClient<G>;
+export interface TableverseProviderProps<G extends TableverseGame> {
+  client: TableverseClient<G>;
   children: ReactNode;
 }
 
-export interface UseDiscoveryResult<G extends TTKitGame> {
+export interface UseDiscoveryResult<G extends TableverseGame> {
   activeCommandType: string | null;
   open: OpenSnapshotResult<G> | null;
   trail: ReadonlyArray<PickOptionOf<G>>;
@@ -40,7 +40,7 @@ export type SelectableState =
   | "selected"
   | "unselectable";
 
-export interface UseSelectableResult<G extends TTKitGame> {
+export interface UseSelectableResult<G extends TableverseGame> {
   state: SelectableState;
   onClick: () => void;
   option: PickOptionOf<G> | null;
@@ -50,8 +50,8 @@ export interface UseGameEventsOptions<TEvent> {
   filter?: (event: TEvent) => boolean;
 }
 
-export interface GameHooks<G extends TTKitGame> {
-  readonly TTKitProvider: (props: TTKitProviderProps<G>) => ReactNode;
+export interface GameHooks<G extends TableverseGame> {
+  readonly TableverseProvider: (props: TableverseProviderProps<G>) => ReactNode;
   readonly useView: () => G["view"];
   readonly useGameEvents: (
     handler: (event: G["event"]) => void,
@@ -62,12 +62,12 @@ export interface GameHooks<G extends TTKitGame> {
     discoveryStep: string,
     isTarget: (option: PickOptionOf<G>) => boolean,
   ) => UseSelectableResult<G>;
-  readonly useTTKitClient: () => TTKitClient<G>;
+  readonly useTableverseClient: () => TableverseClient<G>;
   readonly useViewerId: () => string;
 }
 
-interface BundleContextValue<G extends TTKitGame> {
-  client: TTKitClient<G>;
+interface BundleContextValue<G extends TableverseGame> {
+  client: TableverseClient<G>;
   discovery: DiscoveryState<G>;
 }
 
@@ -85,12 +85,12 @@ interface BundleContextValue<G extends TTKitGame> {
  * import type { SplendorGame } from "./generated-types";
  *
  * export const {
- *   TTKitProvider,
+ *   TableverseProvider,
  *   useView,
  *   useDiscovery,
  *   useGameEvents,
  *   useSelectable,
- *   useTTKitClient,
+ *   useTableverseClient,
  *   useViewerId,
  * } = createGameHooks<SplendorGame>();
  * ```
@@ -98,23 +98,23 @@ interface BundleContextValue<G extends TTKitGame> {
  * `G` is required — there is no fallback. This is the only entry point
  * for the hooks layer; standalone hooks are not exported.
  */
-export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
+export function createGameHooks<G extends TableverseGame>(): GameHooks<G> {
   const BundleContext = createContext<BundleContextValue<G> | null>(null);
 
   function useBundleContext(): BundleContextValue<G> {
     const value = useContext(BundleContext);
     if (value === null) {
       throw new Error(
-        "Hook called outside the TTKitProvider returned by this createGameHooks() bundle.",
+        "Hook called outside the TableverseProvider returned by this createGameHooks() bundle.",
       );
     }
     return value;
   }
 
-  function TTKitProvider({
+  function TableverseProvider({
     client,
     children,
-  }: TTKitProviderProps<G>): ReactNode {
+  }: TableverseProviderProps<G>): ReactNode {
     const value = useMemo<BundleContextValue<G>>(
       () => ({
         client,
@@ -219,7 +219,7 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
     };
   }
 
-  function useTTKitClient(): TTKitClient<G> {
+  function useTableverseClient(): TableverseClient<G> {
     return useBundleContext().client;
   }
 
@@ -232,12 +232,12 @@ export function createGameHooks<G extends TTKitGame>(): GameHooks<G> {
   }
 
   return {
-    TTKitProvider,
+    TableverseProvider,
     useView,
     useGameEvents,
     useDiscovery,
     useSelectable,
-    useTTKitClient,
+    useTableverseClient,
     useViewerId,
   };
 }

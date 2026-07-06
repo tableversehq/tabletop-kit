@@ -2,7 +2,7 @@ export {
   createGameHooks,
   type GameHooks,
   type SelectableState,
-  type TTKitProviderProps,
+  type TableverseProviderProps,
   type UseDiscoveryResult,
   type UseGameEventsOptions,
   type UseSelectableResult,
@@ -13,8 +13,8 @@ export type {
   DiscoveryPayload,
   DiscoveryResult,
   ExecutionResult,
-  TTKitClient,
-  TTKitGame,
+  TableverseClient,
+  TableverseGame,
 } from "./client/types.ts";
 
 export {

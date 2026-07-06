@@ -22,7 +22,7 @@ export type DiscoveryPayload = Omit<Discovery, "actorId">;
  */
 export type DiscoveryResult = AnyCommandDiscoveryResult;
 
-export interface TTKitGame {
+export interface TableverseGame {
   view: unknown;
   event: unknown;
   command: CommandPayload;
@@ -37,7 +37,7 @@ export interface ExecutionResult {
   reason?: string;
 }
 
-export interface TTKitClient<G extends TTKitGame> {
+export interface TableverseClient<G extends TableverseGame> {
   readonly viewerId: string;
 
   getView(): G["view"] | null;
