@@ -90,40 +90,58 @@ canvas.addEventListener("pointerdown", async (e) => {
 
 No React anywhere in that path.
 
-### 2. Expose the neutral core React-free
+### 2. Rename `/ui` → `@tableverse-kit/client`, one package, React-free root
 
-The neutral core (`TableverseClient<G>` type, `createInProcessClient`,
-`DiscoveryState<G>`) must be importable without pulling in React. Two viable
-packagings:
+Rename the existing `@tableverse-kit/ui` package to **`@tableverse-kit/client`**.
+It is a single package with a React-free root and an optional React entry:
 
-- **(A, recommended) Extract `@tableverse-kit/client`** holding the interface,
-  the in-process adapter, and the discovery state machine. `@tableverse-kit/ui`
-  depends on it and adds only the React bindings.
-- **(B) Keep one package, add a React-free entry.** `@tableverse-kit/ui`
-  exposes the neutral core from a subpath with no React import
-  (`@tableverse-kit/ui/client`) and the hooks from the root. React stays a
-  `peerDependency` only the hooks entry needs.
+- root (`@tableverse-kit/client`) — the neutral core: `TableverseClient<G>`,
+  `createInProcessClient`, the interaction state machine, and neutral client
+  sugar. Imports no React.
+- an optional React entry — the hooks (`createGameHooks`, etc.). React is an
+  **optional** peer dependency (`peerDependenciesMeta`), so a canvas/WebGL/WASM
+  consumer installs the package and imports the root without React ever entering
+  its dependency tree or bundle.
 
-Recommendation: **(A)**. Once a WebGL/WASM game is a real consumer, "the client"
-and "the React hooks" have genuinely different dependency footprints and
-audiences; a `react`-named package as the home of the non-React client is
-misleading. (A) also matches the platform-side framing where the private
-`@tableverse/client` wraps the neutral core, not the hooks.
+The invariant that makes this honest: **the root must never import React, even
+transitively.** Enforce it, don't trust it — an import-boundary test that
+imports the root in a React-free context and asserts nothing pulls React in.
 
-The discovery/selection logic (`DiscoveryState`, and the `useSelectable`
-decision table) must live in the neutral core, so a canvas/WebGL game gets the
-same selection/discovery state machine a React game gets. `useSelectable`
-becomes a thin React projection of a neutral `selectable(state, isTarget)`
-helper.
+### 2a. Abstract the interaction state machine out of the hooks
+
+This is the load-bearing part of the pivot. The genuinely hard, valuable logic
+is the multi-step **discovery / selection / confirm** state machine — today
+split between the framework-neutral `DiscoveryState<G>`
+(`client/discovery-state.ts`) and the React-shaped `useSelectable` decision
+table inside `create-game-hooks.tsx`.
+
+All of that interaction logic must live in the **neutral core**, so a
+canvas/WebGL/WASM game gets exactly the same selection/discovery behavior a
+React game gets:
+
+- keep `DiscoveryState<G>` in the neutral core,
+- lift the `useSelectable` decision table into a neutral, framework-agnostic
+  helper (e.g. `selectable(discoveryState, isTarget)` returning
+  `idle | selectable | selected | unselectable` + an `onPick`),
+- the React hooks (`useDiscovery`, `useSelectable`) become thin projections of
+  those neutral primitives — they adapt to React's render model
+  (`useSyncExternalStore`, etc.) and add nothing that a non-React consumer
+  cannot get from the neutral helpers directly.
+
+If interaction logic stays trapped in the hooks, non-React frontends re-derive a
+subtle state machine by hand and get it wrong. Pushing it down is what lets the
+hooks be genuinely optional.
 
 ### 3. React hooks stay, re-scoped as one optional binding
 
 `createGameHooks<G>()` and the hooks in
 [2026-05-19](./2026-05-19-tabletop-ui-hooks-design.md) remain supported for
-React consumers. They are no longer _the_ way to use the client — they are a
-convenience layer over `TableverseClient<G>`, on equal footing with "use the client
-directly in a game loop." Nothing about the hooks changes mechanically; only
-their status in the story does.
+React consumers, shipped from the optional React entry of
+`@tableverse-kit/client`. They are no longer _the_ way to use the client — they
+are a convenience layer over `TableverseClient<G>` and the neutral interaction
+helpers (§2a), on equal footing with "use the client directly in a game loop."
+Mechanically the hooks barely change; their job narrows to React-render
+adaptation now that the interaction logic lives in the neutral core.
 
 ### 4. Drop the shadcn-style styled/copy-in component kit
 
@@ -140,12 +158,12 @@ and interaction model, not from shipped DOM components.
 
 Decision: **drop the styled/copy-in component kit and `ttk ui add`** as a
 planned deliverable. Keep the interaction _logic_ (discovery/selection) in the
-neutral core. `@tableverse-kit/ui` narrows to React bindings over the client —
-hooks, provider, and at most unstyled headless helpers — with no styled visual
-identity and no copy-in registry.
+neutral core (§2a). The React entry of `@tableverse-kit/client` narrows to thin
+bindings over the client — hooks, provider, and at most unstyled headless
+helpers — with no styled visual identity and no copy-in registry.
 
 This also resolves the still-open `@tableverse-kit/ui` implementation deferral
-in `AGENTS.md`: the package's remaining scope is the thin hooks binding, not a
+in `AGENTS.md`: the remaining scope is the thin React hooks binding, not a
 component library.
 
 ## Architecture
@@ -154,21 +172,22 @@ component library.
 @tableverse-kit/engine (OSS)
   - GameExecutor, schemas, runtime
 
-@tableverse-kit/client (OSS)          <-- neutral core, React-free (recommended split)
-  - TableverseClient<G> interface
-  - createInProcessClient             (ttk dev / offline / 3rd-party)
-  - DiscoveryState / selectable()     (framework-neutral interaction logic)
-
-@tableverse-kit/ui (OSS)              <-- React bindings ONLY (thin)
-  - createGameHooks<G>() over TableverseClient<G>
-  - NO styled component kit, NO `ttk ui add`
+@tableverse-kit/client (OSS)          <-- renamed from /ui; single package
+  root (React-free):
+    - TableverseClient<G> interface
+    - createInProcessClient           (ttk dev / offline / 3rd-party)
+    - DiscoveryState / selectable()   (framework-neutral interaction logic)
+    - client sugar (onView, ...)
+  optional React entry:
+    - createGameHooks<G>() + hooks     (thin, react = optional peer dep)
+    - NO styled component kit, NO `ttk ui add`
 
 @tableverse/client (PRIVATE, tableverse repo)
   - createTableverseClient<G>() -> TableverseClient<G>
       dev build  -> wraps createInProcessClient
       prod build -> postMessage bridge
   - consumed directly by canvas/WebGL/WASM games;
-    React games layer @tableverse-kit/ui on top
+    React games add the optional React entry on top
 ```
 
 The transport boundary from
@@ -182,17 +201,19 @@ returned `TableverseClient<G>` is not assumed to be React.
 - No change to `GameExecutor`, the engine, or the transport wire protocol.
 - No change to the `TableverseClient<G>` method contract (the `getAvailableCommands`
   async change from the 2026-05-26 doc still stands; nothing new here).
-- This doc does not specify the extract-vs-subpath packaging mechanics beyond
-  the recommendation in §2; that is a follow-up once a real non-React consumer
-  exists.
+- No separate framework-adapter package. React ships as an optional entry of the
+  single `@tableverse-kit/client` package; a dedicated adapter package is out of
+  scope for now.
 
 ## Consequences
 
 - A canvas/WebGL/WASM game can consume the client directly, with no React.
-- The neutral core (interface + in-process adapter + discovery state machine)
-  becomes the headline surface; hooks become an optional binding.
-- The planned styled/copy-in component library is cancelled; `@tableverse-kit/ui`
-  narrows to React bindings.
-- `AGENTS.md` should reflect: `@tableverse-kit/ui` is a thin React binding over a
-  framework-neutral client; the client core is the primary surface; the
+- `@tableverse-kit/ui` is renamed to `@tableverse-kit/client`: a single package
+  with a React-free root (the headline surface) and an optional React entry.
+- The interaction state machine (discovery/selection) is abstracted into the
+  neutral core so every renderer shares it; the React hooks become thin
+  projections of it.
+- The planned styled/copy-in component library is cancelled.
+- `AGENTS.md` should reflect: the package is `@tableverse-kit/client`; its
+  neutral root is the primary surface; React hooks are an optional entry; the
   styled-component kit is no longer planned.
