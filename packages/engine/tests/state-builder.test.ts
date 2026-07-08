@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import {
   assertSchemaValue,
   createCommandFactory,
@@ -164,7 +164,7 @@ test("executor executes commands and projects visible state", () => {
     input: {},
   });
 
-  expect(result.ok).toBeTrue();
+  expect(result.ok).toBe(true);
 
   if (!result.ok) {
     return;

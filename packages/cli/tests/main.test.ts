@@ -1,11 +1,13 @@
-import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
 import { run } from "../src/main.ts";
 
 describe("tvk", () => {
   it("can be installed as a Bun executable", async () => {
-    const mainSource = await Bun.file(
+    const mainSource = readFileSync(
       new URL("../src/main.ts", import.meta.url),
-    ).text();
+      "utf8",
+    );
 
     expect(mainSource.startsWith("#!/usr/bin/env bun\n")).toBe(true);
   });

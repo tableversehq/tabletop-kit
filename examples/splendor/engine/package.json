@@ -8,16 +8,13 @@
     "./client": "./src/client.ts"
   },
   "scripts": {
-    "test": "bun test",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "generate:types": "bun ../../../packages/cli/src/main.ts generate types --outDir generated",
-    "generate:client-sdk": "bun ../../../packages/cli/src/main.ts generate client-sdk --outDir generated"
+    "generate:types": "tsx ../../../packages/cli/src/main.ts generate types --outDir generated",
+    "generate:client-sdk": "tsx ../../../packages/cli/src/main.ts generate client-sdk --outDir generated"
   },
   "dependencies": {
     "@tableverse-kit/engine": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"

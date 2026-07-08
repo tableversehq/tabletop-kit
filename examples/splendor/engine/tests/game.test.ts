@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { createGameExecutor } from "@tableverse-kit/engine";
 import { SPLENDOR_DISCOVERY_STEPS } from "../src/discovery.ts";
 import { createCommands } from "../src/commands/index.ts";

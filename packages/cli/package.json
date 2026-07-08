@@ -10,7 +10,7 @@
     "tvk": "./src/main.ts"
   },
   "scripts": {
-    "test": "bun test",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -18,7 +18,7 @@
     "@tableverse-kit/engine": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/node": "^24.13.2",
     "splendor-example": "workspace:*"
   },
   "peerDependencies": {

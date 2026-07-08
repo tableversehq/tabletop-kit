@@ -1,29 +1,31 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createGenerationContext } from "../src/lib/generation-context.ts";
 import { loadConfig } from "../src/lib/load-config.ts";
 import { parseCommandArguments } from "../src/lib/parse-args.ts";
 
-const repoRoot = resolve(import.meta.dir, "..", "..", "..");
+const currentDir = fileURLToPath(new URL(".", import.meta.url));
+const repoRoot = resolve(currentDir, "..", "..", "..");
 
 describe("createGenerationContext", () => {
   it("resolves the output directory from a default config file", async () => {
     const parsed = parseCommandArguments([]);
 
     const context = await createGenerationContext(parsed, {
-      cwd: resolve(import.meta.dir, "fixtures"),
+      cwd: resolve(currentDir, "fixtures"),
     });
 
     expect(context.game.name).toBe("fixture-default");
     expect(context.outputDirectory).toBe(
-      resolve(import.meta.dir, "fixtures", "generated-from-config"),
+      resolve(currentDir, "fixtures", "generated-from-config"),
     );
   });
 
   it("resolves the output directory from an explicit config file", async () => {
     const parsed = parseCommandArguments([
       "--config",
-      resolve(import.meta.dir, "fixtures", "tableverse.custom.config.ts"),
+      resolve(currentDir, "fixtures", "tableverse.custom.config.ts"),
     ]);
 
     const context = await createGenerationContext(parsed, {
@@ -32,7 +34,7 @@ describe("createGenerationContext", () => {
 
     expect(context.game.name).toBe("fixture-named");
     expect(context.outputDirectory).toBe(
-      resolve(import.meta.dir, "fixtures", "custom-generated"),
+      resolve(currentDir, "fixtures", "custom-generated"),
     );
   });
 });
@@ -40,7 +42,7 @@ describe("createGenerationContext", () => {
 describe("loadConfig", () => {
   it("loads the default tableverse.config.ts from cwd", async () => {
     const config = await loadConfig({
-      cwd: resolve(import.meta.dir, "fixtures"),
+      cwd: resolve(currentDir, "fixtures"),
     });
 
     expect(config.game.name).toBe("fixture-default");
@@ -50,7 +52,7 @@ describe("loadConfig", () => {
     const config = await loadConfig({
       cwd: repoRoot,
       configPath: resolve(
-        import.meta.dir,
+        currentDir,
         "fixtures",
         "tableverse.custom.config.ts",
       ),
@@ -64,7 +66,7 @@ describe("loadConfig", () => {
       loadConfig({
         cwd: repoRoot,
         configPath: resolve(
-          import.meta.dir,
+          currentDir,
           "fixtures",
           "tabletop.invalid.config.ts",
         ),
