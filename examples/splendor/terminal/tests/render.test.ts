@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { createLocalSplendorSession } from "../src/session.ts";
 import { renderGameScreen } from "../src/render.ts";
 

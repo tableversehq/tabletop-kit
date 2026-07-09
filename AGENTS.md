@@ -100,8 +100,6 @@ Important workspace areas:
 - `examples/splendor/terminal`
   terminal client for exercising command discovery and hosted-style gameplay
   locally
-- `examples/splendor/server` and `examples/splendor/web`
-  experimental hosted Splendor reference app
 - `docs/design`
   current design decisions and historical design records
 
@@ -184,10 +182,13 @@ When editing this repo:
 Common verification commands:
 
 ```bash
-bun run lint
-bunx tsc -b
-bun test --cwd packages/engine
-bun test --cwd packages/cli
-bun test --cwd examples/splendor/engine
-bun test --cwd examples/splendor/terminal
+pnpm lint
+pnpm exec tsc -b
+pnpm test                 # run every package's tests via Vitest
+# or per package:
+pnpm -C packages/engine test
+pnpm -C packages/cli test
+pnpm -C packages/client test
+pnpm -C examples/splendor/engine test
+pnpm -C examples/splendor/terminal test
 ```

@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import * as tabletopEngine from "../src";
 
 const { createCommandFactory, t } = tabletopEngine;
@@ -36,10 +36,10 @@ test("chained builder supports non-discoverable commands", () => {
 
   expect(command.commandId).toBe("pass_turn");
   expect(command.commandSchema).toBe(passTurnSchema);
-  expect(command.validate).toBeFunction();
-  expect(command.execute).toBeFunction();
-  expect("discoverySchema" in command).toBeFalse();
-  expect("discover" in command).toBeFalse();
+  expect(command.validate).toBeTypeOf("function");
+  expect(command.execute).toBeTypeOf("function");
+  expect("discoverySchema" in command).toBe(false);
+  expect("discover" in command).toBe(false);
 });
 
 test("chained builder supports step-authored discovery", () => {
@@ -85,7 +85,7 @@ test("chained builder supports step-authored discovery", () => {
       return true;
     })
     .validate(({ command }) => {
-      expect(command.input?.amount).toBeNumber();
+      expect(command.input?.amount).toBeTypeOf("number");
       return { ok: true as const };
     })
     .execute(({ game, command }) => {
@@ -105,9 +105,9 @@ test("chained builder supports step-authored discovery", () => {
   expect(command.discovery?.steps[0]?.outputSchema).toBe(
     selectAmountOutputSchema,
   );
-  expect(command.discovery?.steps[0]?.resolve).toBeFunction();
-  expect("discoverySchema" in command).toBeFalse();
-  expect("discover" in command).toBeFalse();
+  expect(command.discovery?.steps[0]?.resolve).toBeTypeOf("function");
+  expect("discoverySchema" in command).toBe(false);
+  expect("discover" in command).toBe(false);
 });
 
 test("chained builder supports ordered discovery steps and completion", () => {
@@ -199,8 +199,8 @@ test("chained builder supports ordered discovery steps and completion", () => {
   expect(discoverableCommand.commandId).toBe("increment_with_discovery");
   expect(mixedOrderCommand.commandId).toBe("increment_mixed_order");
   expect(discoverableCommand.discovery?.startStep).toBe("select_amount");
-  expect(discoverableCommand.discovery?.steps[0]?.initial).toBeTrue();
-  expect(discoverableCommand.discovery?.steps[1]?.initial).toBeFalse();
+  expect(discoverableCommand.discovery?.steps[0]?.initial).toBe(true);
+  expect(discoverableCommand.discovery?.steps[1]?.initial).toBe(false);
 });
 
 test("chained builder supports callback-scoped built discovery steps", () => {
@@ -239,7 +239,7 @@ test("chained builder supports callback-scoped built discovery steps", () => {
         .build(),
     ])
     .validate(({ command }) => {
-      expect(command.input?.amount).toBeNumber();
+      expect(command.input?.amount).toBeTypeOf("number");
       return { ok: true as const };
     })
     .execute(({ game, command }) => {

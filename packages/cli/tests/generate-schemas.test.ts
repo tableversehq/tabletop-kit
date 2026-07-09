@@ -1,11 +1,12 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { run } from "../src/main.ts";
 
-const repoRoot = join(import.meta.dir, "..", "..", "..");
+const currentDir = fileURLToPath(new URL(".", import.meta.url));
+const repoRoot = join(currentDir, "..", "..", "..");
 
 async function writeCliConfig(cwd: string): Promise<void> {
   const configFile = join(cwd, "tableverse.config.ts");

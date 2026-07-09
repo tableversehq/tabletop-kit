@@ -1,12 +1,14 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createGameExecutor } from "@tableverse-kit/engine";
 import { createSplendorGame } from "splendor-example";
 import { run } from "../src/main.ts";
 
-const repoRoot = join(import.meta.dir, "..", "..", "..");
+const currentDir = fileURLToPath(new URL(".", import.meta.url));
+const repoRoot = join(currentDir, "..", "..", "..");
 const splendorRoot = join(repoRoot, "examples", "splendor", "engine");
 
 describe("validate", () => {

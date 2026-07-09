@@ -16,7 +16,6 @@
   ],
   "compilerOptions": {
     "lib": ["ESNext"],
-    "types": ["bun"],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",

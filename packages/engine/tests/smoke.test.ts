@@ -1,8 +1,8 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import * as packageExports from "../src/index";
 
 test("package root exports an object", () => {
-  expect(packageExports).toBeObject();
+  expect(packageExports).toBeTypeOf("object");
   expect(packageExports.GameDefinitionBuilder).toBeDefined();
   expect("defineGame" in packageExports).toBe(false);
   expect(packageExports.createGameExecutor).toBeDefined();

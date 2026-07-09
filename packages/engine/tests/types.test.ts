@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import type {
   CanonicalStateOf,
   CommandDiscoveryResultFor,
@@ -142,7 +142,7 @@ test("executor infers discovery result from command definitions", () => {
     ])
     .validate(({ command }) => {
       const amount: number = command.input.amount;
-      expect(amount).toBeNumber();
+      expect(amount).toBeTypeOf("number");
       return { ok: true as const };
     })
     .execute(({ game, command }) => {

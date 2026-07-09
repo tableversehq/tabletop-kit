@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import { fileURLToPath } from "node:url";
 import { runGenerateCommand } from "./commands/generate.ts";
 import { runValidateCommand } from "./commands/validate.ts";
 import { failure, success, type RunResult } from "./lib/command-result.ts";
@@ -35,7 +36,7 @@ export async function run(
   return failure(`unknown_command:${command}`);
 }
 
-if (import.meta.main) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const result = await run(process.argv.slice(2));
 
   if (result.stdout) {
