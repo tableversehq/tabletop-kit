@@ -86,6 +86,29 @@ The loopback flow requires a browser on the same machine as the CLI. SSH-only
 and CI environments are out of scope for this version; a token-paste or
 device-code fallback can be added later without changing the client design.
 
+## Environment selection
+
+Two environment variables choose the deployment the CLI talks to:
+
+| Variable             | Default                         | Selects      |
+| -------------------- | ------------------------------- | ------------ |
+| `TABLEVERSE_API_URL` | `https://api-dev.tableverse.io` | platform-api |
+| `TABLEVERSE_WEB_URL` | `https://dev.tableverse.io`     | platform-web |
+
+A trailing slash is stripped from either value. This is a supported feature, not
+a test hook: it is how a contributor runs the CLI against a local stack, and how
+anyone reaches dev or staging once the defaults point at production.
+
+```bash
+TABLEVERSE_API_URL=http://localhost:3000 \
+TABLEVERSE_WEB_URL=http://localhost:5000 \
+  tvk login
+```
+
+Because credentials are keyed by `apiBaseUrl` (below), a local session and a dev
+session coexist rather than overwriting each other. Both variables are listed in
+`tvk login --help`.
+
 ## Token storage and refresh
 
 - **Location:** `~/.config/tableverse/credentials.json`, honoring
@@ -171,6 +194,7 @@ required for `tvk upload`.
 Full request/response shapes are in the contract doc. The CLI calls:
 
 - `POST /oauth/token` — token exchange and refresh.
+- `POST /auth/logout` — best-effort refresh-token revocation on `logout` (existing endpoint).
 - `GET /me` — account for `whoami`.
 - `POST /versions` — create a pending version; returns presigned S3 PUT URLs.
 - `PUT <presigned S3 URL>` — upload each tarball directly to S3.
