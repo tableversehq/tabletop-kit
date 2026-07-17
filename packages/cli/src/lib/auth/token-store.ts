@@ -2,7 +2,22 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { Type, type Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
-import { AccountSchema } from "../api-schema.ts";
+
+/**
+ * The account as *stored*, which is not the same contract as the account as
+ * *sent* (`MeResponseSchema` in `../api/me.ts`). They look alike today and are
+ * still restated rather than shared: this one describes a file that older and
+ * newer CLIs both have to read, so it may only change when we choose to migrate
+ * it, whereas the wire format changes whenever the platform ships. Importing
+ * the API schema here would let a platform release silently redefine what
+ * counts as a valid credentials file, including files this CLI never wrote.
+ */
+const StoredAccountSchema = Type.Object({
+  id: Type.String(),
+  email: Type.Union([Type.String(), Type.Null()]),
+});
+
+export type StoredAccount = Static<typeof StoredAccountSchema>;
 
 const StoredCredentialsSchema = Type.Object({
   apiBaseUrl: Type.String(),
@@ -10,7 +25,7 @@ const StoredCredentialsSchema = Type.Object({
   refreshToken: Type.String(),
   /** ISO-8601 timestamp at which the access token expires. */
   expiresAt: Type.String(),
-  account: AccountSchema,
+  account: StoredAccountSchema,
 });
 
 export type StoredCredentials = Static<typeof StoredCredentialsSchema>;

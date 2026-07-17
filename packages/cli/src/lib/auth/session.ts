@@ -3,7 +3,7 @@ import {
   type PlatformClient,
   type TokenResponse,
 } from "../platform-client.ts";
-import type { Account } from "../api-schema.ts";
+import type { MeResponse } from "../api/me.ts";
 import type { StoredCredentials, TokenStore } from "./token-store.ts";
 
 /** Refresh the access token this many ms before it actually expires. */
@@ -23,10 +23,11 @@ export function toExpiresAt(now: Date, expiresIn: number): string {
   return new Date(now.getTime() + expiresIn * 1000).toISOString();
 }
 
+/** Where the wire format crosses into the file format. */
 export function credentialsFromTokens(
   apiBaseUrl: string,
   tokens: TokenResponse,
-  account: Account,
+  account: MeResponse,
   now: Date,
 ): StoredCredentials {
   return {
@@ -34,7 +35,10 @@ export function credentialsFromTokens(
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
     expiresAt: toExpiresAt(now, tokens.expiresIn),
-    account,
+    // Copied field by field rather than passed through. `/me` may carry fields
+    // the CLI does not model, and those must not end up in the credentials file
+    // just because they happened to be on the response object.
+    account: { id: account.id, email: account.email },
   };
 }
 

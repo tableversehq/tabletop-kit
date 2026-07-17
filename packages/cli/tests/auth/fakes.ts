@@ -1,5 +1,5 @@
 import type { AuthContext } from "../../src/lib/auth/context.ts";
-import type { Account } from "../../src/lib/api-schema.ts";
+import type { MeResponse } from "../../src/lib/api/me.ts";
 import type {
   StoredCredentials,
   TokenStore,
@@ -26,7 +26,7 @@ export function defaultTokens(): TokenResponse {
   };
 }
 
-export function defaultAccount(): Account {
+export function defaultAccount(): MeResponse {
   return { id: "u1", email: "user@example.com" };
 }
 

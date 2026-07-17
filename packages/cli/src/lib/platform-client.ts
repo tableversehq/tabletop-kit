@@ -1,10 +1,7 @@
 import type { TSchema, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
-import {
-  AccountSchema,
-  RawTokenResponseSchema,
-  type Account,
-} from "./api-schema.ts";
+import { MeResponseSchema, type MeResponse } from "./api/me.ts";
+import { OAuthTokenResponseSchema } from "./api/oauth-token.ts";
 
 export interface TokenResponse {
   accessToken: string;
@@ -21,7 +18,7 @@ export interface PlatformClient {
   }): Promise<TokenResponse>;
   refreshToken(input: { refreshToken: string }): Promise<TokenResponse>;
   logout(input: { refreshToken: string }): Promise<void>;
-  me(input: { accessToken: string }): Promise<Account>;
+  me(input: { accessToken: string }): Promise<MeResponse>;
 }
 
 export type FetchLike = typeof fetch;
@@ -81,7 +78,7 @@ function parseResponse<T extends TSchema>(
 }
 
 function toTokenResponse(
-  raw: Static<typeof RawTokenResponseSchema>,
+  raw: Static<typeof OAuthTokenResponseSchema>,
 ): TokenResponse {
   return {
     accessToken: raw.access_token,
@@ -112,7 +109,7 @@ export function createPlatformClient(options: {
     }
 
     return toTokenResponse(
-      parseResponse(RawTokenResponseSchema, await response.json(), endpoint),
+      parseResponse(OAuthTokenResponseSchema, await response.json(), endpoint),
     );
   }
 
@@ -156,7 +153,7 @@ export function createPlatformClient(options: {
         throw new PlatformRequestError(response.status, endpoint);
       }
 
-      return parseResponse(AccountSchema, await response.json(), endpoint);
+      return parseResponse(MeResponseSchema, await response.json(), endpoint);
     },
   };
 }

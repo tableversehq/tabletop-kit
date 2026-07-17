@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { credentialsFromTokens } from "../src/lib/auth/session.ts";
 import {
   createPlatformClient,
   PlatformRequestError,
@@ -96,6 +97,36 @@ describe("platform client response validation", () => {
     await expect(
       client.refreshToken({ refreshToken: "r" }),
     ).rejects.toMatchObject({ endpoint: "/oauth/token" });
+  });
+});
+
+// The wire format and the credentials file are separate contracts. `/me` is
+// allowed to grow fields; the file must only ever hold what its own schema
+// defines, or a platform release would start rewriting files on disk.
+describe("wire format does not leak into the file format", () => {
+  it("stores only the account fields the file format defines", async () => {
+    const client = makeClient(
+      vi.fn<FetchLike>(async () =>
+        jsonResponse({
+          id: "u1",
+          email: "a@b.c",
+          displayName: "a field the CLI does not model",
+        }),
+      ),
+    );
+
+    // No cast: the unknown field arrives over the network, exactly as it would
+    // the day the platform ships it.
+    const account = await client.me({ accessToken: "a" });
+
+    const credentials = credentialsFromTokens(
+      "https://api-dev.tableverse.io",
+      { accessToken: "a", refreshToken: "r", expiresIn: 3600 },
+      account,
+      new Date("2026-07-12T18:00:00.000Z"),
+    );
+
+    expect(credentials.account).toEqual({ id: "u1", email: "a@b.c" });
   });
 });
 
