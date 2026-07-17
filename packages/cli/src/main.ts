@@ -1,8 +1,12 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { fileURLToPath } from "node:url";
 import { runGenerateCommand } from "./commands/generate.ts";
+import { createAuthContext } from "./lib/auth/context.ts";
+import { runLoginCommand } from "./commands/login.ts";
+import { runLogoutCommand } from "./commands/logout.ts";
 import { runValidateCommand } from "./commands/validate.ts";
+import { runWhoamiCommand } from "./commands/whoami.ts";
 import { failure, success, type RunResult } from "./lib/command-result.ts";
 import { createRootHelpText } from "./lib/help-text.ts";
 import { isHelpFlag } from "./lib/parse-args.ts";
@@ -31,6 +35,18 @@ export async function run(
     return runValidateCommand(args, {
       cwd: options.cwd ?? process.cwd(),
     });
+  }
+
+  if (command === "login") {
+    return runLoginCommand(args, createAuthContext());
+  }
+
+  if (command === "logout") {
+    return runLogoutCommand(args, createAuthContext());
+  }
+
+  if (command === "whoami") {
+    return runWhoamiCommand(args, createAuthContext());
   }
 
   return failure(`unknown_command:${command}`);
